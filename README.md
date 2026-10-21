@@ -58,11 +58,12 @@ curl https://rates.apparus.app/v1/latest.json
 
 ## Límites del plan gratuito
 
-| Recurso              | Límite diario | Uso previsto                                                          |
-| -------------------- | ------------- | --------------------------------------------------------------------- |
-| Peticiones al Worker | 100.000       | Las de quien consuma el feed, más 288 ejecuciones programadas         |
-| Lecturas de KV       | 100.000       | Pocas: la caché de Cloudflare responde las peticiones repetidas       |
-| Escrituras en KV     | 1.000         | Unas 600: `latest.json` en cada ejecución y el mes solo cuando cambia |
+| Recurso                 | Límite diario | Uso previsto                                                                    |
+| ----------------------- | ------------- | ------------------------------------------------------------------------------- |
+| Peticiones al Worker    | 100.000       | Las de quien consuma el feed, más 288 ejecuciones programadas                   |
+| Lecturas de KV          | 100.000       | Pocas: la caché de Cloudflare responde las peticiones repetidas                 |
+| Escrituras en KV        | 1.000         | Unas 600: `latest.json` en cada ejecución y el mes solo cuando cambia           |
+| Eventos de Workers Logs | 200.000       | Unos pocos miles: una ejecución y sus avisos cada 5 minutos, más las peticiones |
 
 Al superar un límite, el servicio deja de responder hasta el día siguiente; no
 genera cargos.
@@ -80,4 +81,6 @@ La URL es pública, así que conviene limitar el abuso:
 
 Un monitor externo gratuito (por ejemplo, UptimeRobot) que revise
 `v1/latest.json` y avise si `updatedAt` tiene más de 30 minutos. Los avisos de
-fuentes caídas quedan en los logs del Worker (`npx wrangler tail`).
+fuentes caídas quedan guardados unos días en Workers Logs (pestaña
+Observability del Worker), dentro de los 200.000 eventos diarios del plan
+gratuito.
