@@ -12,14 +12,14 @@ describe('history', () => {
     const fresh: FreshQuotes = {
       bcvUsd: quote('890.1', '2026-10-22'),
       bcvEur: quote('1000.2', '2026-10-22'),
-      usdt: { ...quote('1005.65', '2026-10-21', 'criptoya'), bid: '1006.5', ask: '1004.8' },
+      usdt: { ...quote('1005.65', '2026-10-21', 'bybit-p2p'), bid: '1006.5', ask: '1004.8' },
       fx: { COP: quote('3174.07', '2026-10-20', 'currency-api') },
     };
 
     const patches = patchesFromFresh(fresh);
 
     expect(patches.get('2026-10-22')).toEqual({ bcvUsd: '890.1', bcvEur: '1000.2' });
-    expect(patches.get('2026-10-21')).toEqual({ usdt: '1005.65', usdtSource: 'criptoya' });
+    expect(patches.get('2026-10-21')).toEqual({ usdt: '1005.65', usdtSource: 'bybit-p2p' });
     expect(patches.get('2026-10-20')).toEqual({ fx: { COP: '3174.07' } });
   });
 
@@ -82,7 +82,7 @@ describe('history', () => {
     const recorded = mergeMonth(
       null,
       '2026-10',
-      new Map([['2026-10-21', { usdt: '1005.65', usdtSource: 'criptoya' }]]),
+      new Map([['2026-10-21', { usdt: '1005.65', usdtSource: 'bybit-p2p' }]]),
     );
 
     const backfilled = mergeMonth(
@@ -94,7 +94,7 @@ describe('history', () => {
 
     expect(backfilled.days['2026-10-21']).toEqual({
       usdt: '1005.65',
-      usdtSource: 'criptoya',
+      usdtSource: 'bybit-p2p',
       bcvUsd: '883',
     });
   });

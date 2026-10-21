@@ -31,8 +31,11 @@ export const URLS = {
   dolarApiDollarHistory: 'https://ve.dolarapi.com/v1/historicos/dolares',
   dolarApiEuroHistory: 'https://ve.dolarapi.com/v1/historicos/euros',
   openErApi: 'https://open.er-api.com/v6/latest/USD',
-  criptoYa: 'https://criptoya.com/api/binancep2p/USDT/VES/1',
-  binanceP2p: 'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search',
+  bybitP2p: 'https://api2.bybit.com/fiat/otc/item/online',
+  okxP2pSell:
+    'https://www.okx.com/v3/c2c/tradingOrders/books?quoteCurrency=VES&baseCurrency=USDT&side=sell&paymentMethod=all&userType=all',
+  okxP2pBuy:
+    'https://www.okx.com/v3/c2c/tradingOrders/books?quoteCurrency=VES&baseCurrency=USDT&side=buy&paymentMethod=all&userType=all',
   yadio: 'https://api.yadio.io/exrates/USD',
   currencyApi:
     'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',

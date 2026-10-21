@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { URLS } from '../src/config';
 import { formatDecimal } from '../src/decimal';
 import type { JsonClient } from '../src/http';
-import { BinanceP2pUsdt } from '../src/sources/binanceP2p';
-import { CriptoYaUsdt } from '../src/sources/criptoYa';
+import { BybitP2pUsdt } from '../src/sources/bybitP2p';
 import { CurrencyApiFx } from '../src/sources/currencyApi';
 import {
   DolarApiBcvEur,
@@ -11,6 +10,7 @@ import {
   DolarApiParaleloUsdt,
   readDolarApiHistory,
 } from '../src/sources/dolarApi';
+import { OkxP2pUsdt } from '../src/sources/okxP2p';
 import { OpenErApiBcvEurCross, OpenErApiBcvUsd, OpenErApiFx } from '../src/sources/openErApi';
 import { YadioFx, YadioUsdt } from '../src/sources/yadio';
 import { fakeHttp } from './support';
@@ -51,27 +51,28 @@ describe('sources', () => {
     expect(decimal(eur.value)).toBe('991.744373');
   });
 
-  it('averages the criptoya Binance P2P ask and bid', async () => {
-    const usdt = await new CriptoYaUsdt(http).read();
-
-    expect([decimal(usdt.ask), decimal(usdt.bid), decimal(usdt.value)]).toEqual([
-      '1004.8',
-      '1006.5',
-      '1005.65',
-    ]);
-  });
-
-  it('takes the median of each Binance P2P side and averages them', async () => {
+  it('takes the median of each Bybit P2P side and averages them', async () => {
     const sides: string[] = [];
     const recording: JsonClient = (url, init) => {
-      sides.push(JSON.parse(String(init?.body)).tradeType);
+      sides.push(JSON.parse(String(init?.body)).side);
       return http(url, init);
     };
 
-    const usdt = await new BinanceP2pUsdt(recording, () => new Date('2026-10-21T13:00:00Z')).read();
+    const usdt = await new BybitP2pUsdt(recording, () => new Date('2026-10-21T13:00:00Z')).read();
 
-    expect(sides.sort()).toEqual(['BUY', 'SELL']);
-    expect([decimal(usdt.value), usdt.effectiveDate]).toEqual(['1007.1', '2026-10-21']);
+    expect(sides.sort()).toEqual(['0', '1']);
+    expect([decimal(usdt.value), usdt.effectiveDate]).toEqual(['1008.973', '2026-10-21']);
+  });
+
+  it('takes the median of the top ten OKX P2P ads on each side and averages them', async () => {
+    const usdt = await new OkxP2pUsdt(http, () => new Date('2026-10-21T13:00:00Z')).read();
+
+    expect([decimal(usdt.ask), decimal(usdt.bid), decimal(usdt.value)]).toEqual([
+      '1009.915',
+      '1003.0005',
+      '1006.45775',
+    ]);
+    expect(usdt.effectiveDate).toBe('2026-10-21');
   });
 
   it('reads USDT and foreign currencies from yadio', async () => {
@@ -96,7 +97,7 @@ describe('sources', () => {
     const broken: JsonClient = async () => ({ unexpected: true });
 
     await expect(new DolarApiBcvUsd(broken).read()).rejects.toThrow();
-    await expect(new CriptoYaUsdt(broken).read()).rejects.toThrow();
+    await expect(new OkxP2pUsdt(broken, () => new Date()).read()).rejects.toThrow();
   });
 
   it('fails when dolarapi lacks the requested quote', async () => {

@@ -16,8 +16,9 @@ export const FIXTURES_BY_URL: Record<string, string> = {
   [URLS.dolarApiDollarHistory]: 'dolarapi-historicos-dolares',
   [URLS.dolarApiEuroHistory]: 'dolarapi-historicos-euros',
   [URLS.openErApi]: 'open-er-api',
-  [URLS.criptoYa]: 'criptoya',
-  [URLS.binanceP2p]: 'binance-p2p',
+  [URLS.bybitP2p]: 'bybit-p2p',
+  [URLS.okxP2pSell]: 'okx-p2p-sell',
+  [URLS.okxP2pBuy]: 'okx-p2p-buy',
   [URLS.yadio]: 'yadio',
   [URLS.currencyApi]: 'currency-api',
 };
