@@ -82,6 +82,16 @@ describe('runFeed', () => {
     expect(loads).toBe(3);
   });
 
+  it('rewrites a month only when its content changed, to stay within the KV write quota', async () => {
+    const store = new MemoryStore();
+    await run(store, () => readDolarApiHistory(fakeHttp()));
+    store.writes.length = 0;
+
+    await run(store, () => readDolarApiHistory(fakeHttp()));
+
+    expect(store.writes).toEqual([KEYS.latest]);
+  });
+
   it('retries the backfill on the next run when it fails', async () => {
     const store = new MemoryStore();
     const warnings: string[] = [];
