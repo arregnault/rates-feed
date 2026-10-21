@@ -1,20 +1,35 @@
+export interface StoredDocument {
+  body: string;
+  cacheControl: string;
+}
+
 export interface DocumentStore {
   read<T>(key: string): Promise<T | null>;
+  readRaw(key: string): Promise<StoredDocument | null>;
   write(key: string, document: unknown, cacheControl: string): Promise<void>;
 }
 
-/** Only this worker writes to the bucket, so what it reads back is trusted as already valid. */
-export class R2DocumentStore implements DocumentStore {
-  constructor(private readonly bucket: R2Bucket) {}
+interface Metadata {
+  cacheControl: string;
+}
+
+/** Only this worker writes to the namespace, so what it reads back is trusted as already valid. */
+export class KvDocumentStore implements DocumentStore {
+  constructor(private readonly namespace: KVNamespace) {}
 
   async read<T>(key: string): Promise<T | null> {
-    const object = await this.bucket.get(key);
-    return object === null ? null : await object.json<T>();
+    const stored = await this.readRaw(key);
+    return stored === null ? null : (JSON.parse(stored.body) as T);
+  }
+
+  async readRaw(key: string): Promise<StoredDocument | null> {
+    const { value, metadata } = await this.namespace.getWithMetadata<Metadata>(key);
+    return value === null
+      ? null
+      : { body: value, cacheControl: metadata?.cacheControl ?? 'no-store' };
   }
 
   async write(key: string, document: unknown, cacheControl: string): Promise<void> {
-    await this.bucket.put(key, JSON.stringify(document), {
-      httpMetadata: { contentType: 'application/json; charset=utf-8', cacheControl },
-    });
+    await this.namespace.put(key, JSON.stringify(document), { metadata: { cacheControl } });
   }
 }

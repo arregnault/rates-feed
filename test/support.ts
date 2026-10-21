@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { URLS } from '../src/config';
 import type { JsonClient } from '../src/http';
-import type { DocumentStore } from '../src/store';
+import type { DocumentStore, StoredDocument } from '../src/store';
 
 export function fixture(name: string): unknown {
   const directory = dirname(fileURLToPath(import.meta.url));
@@ -36,12 +36,19 @@ export function fakeHttp(failing: readonly string[] = []): JsonClient {
 export class MemoryStore implements DocumentStore {
   readonly documents = new Map<string, { body: string; cacheControl: string }>();
 
+  readonly writes: string[] = [];
+
   async read<T>(key: string): Promise<T | null> {
     const stored = this.documents.get(key);
     return stored === undefined ? null : (JSON.parse(stored.body) as T);
   }
 
+  async readRaw(key: string): Promise<StoredDocument | null> {
+    return this.documents.get(key) ?? null;
+  }
+
   async write(key: string, document: unknown, cacheControl: string): Promise<void> {
+    this.writes.push(key);
     this.documents.set(key, { body: JSON.stringify(document), cacheControl });
   }
 }

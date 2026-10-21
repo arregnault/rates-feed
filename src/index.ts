@@ -11,19 +11,34 @@ import {
 } from './sources/dolarApi';
 import { OpenErApiBcvEurCross, OpenErApiBcvUsd, OpenErApiFx } from './sources/openErApi';
 import { YadioFx, YadioUsdt } from './sources/yadio';
-import { R2DocumentStore } from './store';
+import { serve } from './serve';
+import { KvDocumentStore } from './store';
 
 interface Env {
-  RATES: R2Bucket;
+  RATES: KVNamespace;
 }
 
 export default {
+  /** The edge cache answers repeated reads, keeping them off the KV daily read quota. */
+  async fetch(request, env, context) {
+    const cache = caches.default;
+    const cached = await cache.match(request);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const response = await serve(request, new KvDocumentStore(env.RATES));
+    if (response.ok && request.method === 'GET') {
+      context.waitUntil(cache.put(request, response.clone()));
+    }
+    return response;
+  },
+
   async scheduled(controller, env, context) {
     const http = createJsonClient();
     const now = new Date(controller.scheduledTime);
     context.waitUntil(
       runFeed({
-        store: new R2DocumentStore(env.RATES),
+        store: new KvDocumentStore(env.RATES),
         chains: {
           bcvUsd: [new DolarApiBcvUsd(http), new OpenErApiBcvUsd(http)],
           bcvEur: [new DolarApiBcvEur(http), new OpenErApiBcvEurCross(http)],

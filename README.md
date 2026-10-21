@@ -1,7 +1,9 @@
 # rates-feed
 
 Worker de Cloudflare que recolecta tasas de cambio desde fuentes públicas, con
-respaldos, y las publica como JSON estático en `rates.apparus.app`.
+respaldos, y las publica como JSON estático en `rates.apparus.app`. Guarda los
+documentos en Workers KV y los sirve él mismo, con la caché de Cloudflare
+delante; todo dentro del plan gratuito y sin método de pago.
 
 ## Qué publica
 
@@ -9,9 +11,10 @@ respaldos, y las publica como JSON estático en `rates.apparus.app`.
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
 | `v1/latest.json`          | Tasas actuales: BCV dólar y euro, USDT y monedas extra por dólar, cada una con fuente, fecha efectiva y hora de captura | 2 min                                      |
 | `v1/history/AAAA-MM.json` | Cierre de cada día del mes                                                                                              | 15 min el mes en curso, 1 año los cerrados |
-| `v1/meta/backfill.json`   | Progreso de la carga inicial del histórico                                                                              | 2 min                                      |
 
-Se ejecuta cada 5 minutos, porque el USDT cambia a lo largo del día. Si todas
+Se ejecuta cada 5 minutos, porque el USDT cambia a lo largo del día. El
+progreso de la carga inicial del histórico se guarda en `v1/meta/backfill.json`,
+que no se publica. Si todas
 las fuentes de un dato fallan, ese dato conserva su último valor y su
 `fetchedAt` antiguo, para que quien lo consuma sepa que está desactualizado.
 
@@ -35,38 +38,43 @@ npm run lint
 npm run typecheck
 npm test
 npm run dev   # luego: curl "http://localhost:8787/__scheduled?cron=*/5+*+*+*+*"
+              #   y:     curl http://localhost:8787/v1/latest.json
 ```
 
 ## Despliegue
 
-1. Activar R2 en el panel de Cloudflare (R2 Object Storage). Pide un método de
-   pago, pero este volumen está dentro del plan gratuito.
-2. Crear el bucket:
-   ```bash
-   npx wrangler login
-   npx wrangler r2 bucket create rates-feed
-   ```
-3. Desplegar el Worker:
-   ```bash
-   npm run deploy
-   ```
-4. Publicar el bucket en el dominio: panel de Cloudflare › R2 ›
-   `rates-feed` › Settings › Custom Domains › `rates.apparus.app`.
-5. Comprobar, tras la primera ejecución programada:
-   ```bash
-   curl https://rates.apparus.app/v1/latest.json
-   ```
+```bash
+npx wrangler login
+npm run deploy
+```
+
+El primer despliegue crea el namespace de KV y conecta `rates.apparus.app` al
+Worker (el dominio debe estar en la misma cuenta de Cloudflare). Tras la primera
+ejecución programada:
+
+```bash
+curl https://rates.apparus.app/v1/latest.json
+```
+
+## Límites del plan gratuito
+
+| Recurso              | Límite diario | Uso previsto                                                          |
+| -------------------- | ------------- | --------------------------------------------------------------------- |
+| Peticiones al Worker | 100.000       | Las de quien consuma el feed, más 288 ejecuciones programadas         |
+| Lecturas de KV       | 100.000       | Pocas: la caché de Cloudflare responde las peticiones repetidas       |
+| Escrituras en KV     | 1.000         | Unas 600: `latest.json` en cada ejecución y el mes solo cuando cambia |
+
+Al superar un límite, el servicio deja de responder hasta el día siguiente; no
+genera cargos.
 
 ## Protección del feed
 
 La URL es pública, así que conviene limitar el abuso:
 
-1. Regla de caché «Cache Everything» para `rates.apparus.app`, para que casi
-   todas las peticiones se sirvan desde la CDN.
-2. Regla de limitación de peticiones por IP (el plan gratuito incluye una).
-3. Alerta de facturación en Cloudflare.
-4. Si alguna vez se borra el bucket, borrar también el registro
-   `rates.apparus.app`.
+1. Regla de limitación de peticiones por IP para `rates.apparus.app` (el plan
+   gratuito incluye una), para que nadie agote el límite diario de peticiones.
+2. Si alguna vez se borra el Worker, comprobar que no quede ningún registro
+   DNS de `rates.apparus.app` apuntando a él.
 
 ## Vigilancia
 

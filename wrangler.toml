@@ -1,10 +1,10 @@
 name = "rates-feed"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
+routes = [{ pattern = "rates.apparus.app", custom_domain = true }]
 
 [triggers]
 crons = ["*/5 * * * *"]
 
-[[r2_buckets]]
+[[kv_namespaces]]
 binding = "RATES"
-bucket_name = "rates-feed"

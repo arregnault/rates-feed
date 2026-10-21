@@ -110,6 +110,10 @@ async function writeMonth(
   keepExisting: boolean,
 ): Promise<void> {
   const key = KEYS.month(month);
-  const merged = mergeMonth(await store.read<MonthDocument>(key), month, patches, keepExisting);
+  const existing = await store.read<MonthDocument>(key);
+  const merged = mergeMonth(existing, month, patches, keepExisting);
+  if (JSON.stringify(merged) === JSON.stringify(existing)) {
+    return;
+  }
   await store.write(key, merged, month < currentMonth ? CLOSED_MONTH_CACHE : OPEN_MONTH_CACHE);
 }
