@@ -37,7 +37,7 @@ function chains(overrides: Partial<SourceChains> = {}): SourceChains {
   return {
     bcvUsd: [source('dolarapi', reading('883.3963'))],
     bcvEur: [source('dolarapi', reading('993.175958'))],
-    usdt: [source('criptoya', usdt('1005.65'))],
+    usdt: [source('bybit-p2p', usdt('1005.65'))],
     fx: [source('currency-api', fx({ COP: '3174.07' }))],
     ...overrides,
   };
@@ -63,15 +63,15 @@ describe('collect', () => {
 
     const { latest } = await collect(
       chains({
-        usdt: [failing('criptoya', 'timeout'), source('binance-p2p', usdt('1007.1'))],
+        usdt: [failing('bybit-p2p', 'timeout'), source('okx-p2p', usdt('1007.1'))],
       }),
       null,
       NOW,
       (message) => warnings.push(message),
     );
 
-    expect(latest.rates.usdt).toMatchObject({ value: '1007.1', source: 'binance-p2p' });
-    expect(warnings).toEqual(['criptoya: timeout']);
+    expect(latest.rates.usdt).toMatchObject({ value: '1007.1', source: 'okx-p2p' });
+    expect(warnings).toEqual(['bybit-p2p: timeout']);
   });
 
   it('keeps the previous value, with its old capture time, when every source fails', async () => {

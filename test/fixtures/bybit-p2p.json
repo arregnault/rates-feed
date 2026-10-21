@@ -1,0 +1,59 @@
+{
+ "ret_code": 0,
+ "ret_msg": "SUCCESS",
+ "result": {
+  "count": 82,
+  "items": [
+   {
+    "price": "1007.000",
+    "tokenId": "USDT",
+    "currencyId": "VES"
+   },
+   {
+    "price": "1008.000",
+    "tokenId": "USDT",
+    "currencyId": "VES"
+   },
+   {
+    "price": "1008.000",
+    "tokenId": "USDT",
+    "currencyId": "VES"
+   },
+   {
+    "price": "1008.948",
+    "tokenId": "USDT",
+    "currencyId": "VES"
+   },
+   {
+    "price": "1008.949",
+    "tokenId": "USDT",
+    "currencyId": "VES"
+   },
+   {
+    "price": "1008.997",
+    "tokenId": "USDT",
+    "currencyId": "VES"
+   },
+   {
+    "price": "1008.999",
+    "tokenId": "USDT",
+    "currencyId": "VES"
+   },
+   {
+    "price": "1009.000",
+    "tokenId": "USDT",
+    "currencyId": "VES"
+   },
+   {
+    "price": "1009.000",
+    "tokenId": "USDT",
+    "currencyId": "VES"
+   },
+   {
+    "price": "1009.000",
+    "tokenId": "USDT",
+    "currencyId": "VES"
+   }
+  ]
+ }
+}

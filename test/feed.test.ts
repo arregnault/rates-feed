@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { SourceChains } from '../src/collect';
 import { KEYS, runFeed, type BackfillLoader } from '../src/feed';
 import type { LatestDocument, MonthDocument } from '../src/model';
-import { BinanceP2pUsdt } from '../src/sources/binanceP2p';
-import { CriptoYaUsdt } from '../src/sources/criptoYa';
+import { BybitP2pUsdt } from '../src/sources/bybitP2p';
 import { CurrencyApiFx } from '../src/sources/currencyApi';
 import { DolarApiBcvEur, DolarApiBcvUsd, readDolarApiHistory } from '../src/sources/dolarApi';
+import { OkxP2pUsdt } from '../src/sources/okxP2p';
 import { OpenErApiBcvUsd, OpenErApiFx } from '../src/sources/openErApi';
 import type { HistoryPoint } from '../src/sources/dolarApi';
 import { fakeHttp, MemoryStore } from './support';
@@ -17,7 +17,7 @@ function chains(failing: string[] = []): SourceChains {
   return {
     bcvUsd: [new DolarApiBcvUsd(http), new OpenErApiBcvUsd(http)],
     bcvEur: [new DolarApiBcvEur(http)],
-    usdt: [new CriptoYaUsdt(http), new BinanceP2pUsdt(http, () => NOW)],
+    usdt: [new BybitP2pUsdt(http, () => NOW), new OkxP2pUsdt(http, () => NOW)],
     fx: [new CurrencyApiFx(http), new OpenErApiFx(http)],
   };
 }
@@ -42,12 +42,12 @@ describe('runFeed', () => {
     const latest = await store.read<LatestDocument>(KEYS.latest);
     const october = await store.read<MonthDocument>(KEYS.month('2026-10'));
     expect(latest?.rates.bcvUsd?.value).toBe('883.3963');
-    expect(latest?.rates.usdt?.source).toBe('criptoya');
+    expect(latest?.rates.usdt?.source).toBe('bybit-p2p');
     expect(store.documents.get(KEYS.latest)?.cacheControl).toBe('public, max-age=120');
     expect(october?.days['2026-10-21']).toMatchObject({
       bcvUsd: '883.3963',
-      usdt: '1005.65',
-      usdtSource: 'criptoya',
+      usdt: '1008.973',
+      usdtSource: 'bybit-p2p',
     });
     expect(october?.days['2026-10-01']?.bcvUsd).toBe('860.1753');
   });
@@ -117,7 +117,7 @@ describe('runFeed', () => {
       store,
       chains: chains([
         'https://ve.dolarapi.com/v1/dolares',
-        'https://criptoya.com/api/binancep2p/USDT/VES/1',
+        'https://api2.bybit.com/fiat/otc/item/online',
       ]),
       loadBackfill: async () => ({ dollars: [], euros: [] }),
       now: NOW,
@@ -126,6 +126,6 @@ describe('runFeed', () => {
 
     const latest = await store.read<LatestDocument>(KEYS.latest);
     expect(latest?.rates.bcvUsd?.source).toBe('open-er-api');
-    expect(latest?.rates.usdt?.source).toBe('binance-p2p');
+    expect(latest?.rates.usdt?.source).toBe('okx-p2p');
   });
 });

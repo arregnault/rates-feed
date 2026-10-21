@@ -20,12 +20,12 @@ las fuentes de un dato fallan, ese dato conserva su último valor y su
 
 ## Fuentes
 
-| Dato          | Orden                                                                                                                                                     |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| BCV dólar     | ve.dolarapi.com, open.er-api.com                                                                                                                          |
-| BCV euro      | ve.dolarapi.com, cruce aproximado de open.er-api.com (no entra al histórico)                                                                              |
-| USDT          | criptoya.com (Binance P2P), Binance P2P directo (mediana de los primeros anuncios de comerciantes verificados), api.yadio.io, paralelo de ve.dolarapi.com |
-| Monedas extra | currency-api (jsDelivr), open.er-api.com, api.yadio.io                                                                                                    |
+| Dato          | Orden                                                                                                                                             |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| BCV dólar     | ve.dolarapi.com, open.er-api.com                                                                                                                  |
+| BCV euro      | ve.dolarapi.com, cruce aproximado de open.er-api.com (no entra al histórico)                                                                      |
+| USDT          | Bybit P2P, OKX P2P (en ambos, promedio de la mediana de los primeros 10 anuncios de compra y de venta), api.yadio.io, paralelo de ve.dolarapi.com |
+| Monedas extra | currency-api (jsDelivr), open.er-api.com, api.yadio.io                                                                                            |
 
 El histórico del BCV desde 2023 sale de ve.dolarapi.com y se carga en tandas de
 12 meses por ejecución, para no superar el límite de CPU del plan gratuito.

@@ -1,7 +1,6 @@
 import { runFeed } from './feed';
 import { createJsonClient } from './http';
-import { BinanceP2pUsdt } from './sources/binanceP2p';
-import { CriptoYaUsdt } from './sources/criptoYa';
+import { BybitP2pUsdt } from './sources/bybitP2p';
 import { CurrencyApiFx } from './sources/currencyApi';
 import {
   DolarApiBcvEur,
@@ -9,6 +8,7 @@ import {
   DolarApiParaleloUsdt,
   readDolarApiHistory,
 } from './sources/dolarApi';
+import { OkxP2pUsdt } from './sources/okxP2p';
 import { OpenErApiBcvEurCross, OpenErApiBcvUsd, OpenErApiFx } from './sources/openErApi';
 import { YadioFx, YadioUsdt } from './sources/yadio';
 import { serve } from './serve';
@@ -43,8 +43,8 @@ export default {
           bcvUsd: [new DolarApiBcvUsd(http), new OpenErApiBcvUsd(http)],
           bcvEur: [new DolarApiBcvEur(http), new OpenErApiBcvEurCross(http)],
           usdt: [
-            new CriptoYaUsdt(http),
-            new BinanceP2pUsdt(http, () => now),
+            new BybitP2pUsdt(http, () => now),
+            new OkxP2pUsdt(http, () => now),
             new YadioUsdt(http),
             new DolarApiParaleloUsdt(http),
           ],
