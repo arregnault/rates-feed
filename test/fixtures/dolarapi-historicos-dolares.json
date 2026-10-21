@@ -1,0 +1,51 @@
+[
+ {
+  "fuente": "oficial",
+  "compra": null,
+  "venta": null,
+  "promedio": 17.5591,
+  "fecha": "2023-01-03"
+ },
+ {
+  "fuente": "oficial",
+  "compra": null,
+  "venta": null,
+  "promedio": 859.0629,
+  "fecha": "2026-09-30"
+ },
+ {
+  "fuente": "paralelo",
+  "compra": null,
+  "venta": null,
+  "promedio": 954.553517,
+  "fecha": "2026-09-30"
+ },
+ {
+  "fuente": "oficial",
+  "compra": null,
+  "venta": null,
+  "promedio": 860.1753,
+  "fecha": "2026-10-01"
+ },
+ {
+  "fuente": "paralelo",
+  "compra": null,
+  "venta": null,
+  "promedio": 957.66623,
+  "fecha": "2026-10-01"
+ },
+ {
+  "fuente": "oficial",
+  "compra": null,
+  "venta": null,
+  "promedio": 883.3963,
+  "fecha": "2026-10-21"
+ },
+ {
+  "fuente": "paralelo",
+  "compra": null,
+  "venta": null,
+  "promedio": 1003.618069,
+  "fecha": "2026-10-21"
+ }
+]
