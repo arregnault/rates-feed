@@ -84,3 +84,9 @@ Un monitor externo gratuito (por ejemplo, UptimeRobot) que revise
 fuentes caídas quedan guardados unos días en Workers Logs (pestaña
 Observability del Worker), dentro de los 200.000 eventos diarios del plan
 gratuito.
+
+## Licencia
+
+El código está bajo la licencia MIT (`LICENSE`). La licencia cubre solo el
+código: los datos publicados vienen de fuentes de terceros, cada una con sus
+propias condiciones de uso.
