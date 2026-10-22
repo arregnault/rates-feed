@@ -2,6 +2,18 @@ import type { DocumentStore } from './store';
 
 const PUBLIC_PATH = /^\/v1\/(?:latest|history\/\d{4}-\d{2})\.json$/;
 
+/**
+ * The edge cache entry for a request: the path alone, so adding a query string cannot skip the
+ * cache and spend the KV read quota. Null for methods that are never cached.
+ */
+export function cacheKey(request: Request): Request | null {
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    return null;
+  }
+  const url = new URL(request.url);
+  return new Request(`${url.origin}${url.pathname}`);
+}
+
 export async function serve(request: Request, store: DocumentStore): Promise<Response> {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     return new Response(null, { status: 405, headers: { allow: 'GET, HEAD' } });

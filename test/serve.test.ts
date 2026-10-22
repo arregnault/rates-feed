@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { KEYS } from '../src/feed';
-import { serve } from '../src/serve';
+import { cacheKey, serve } from '../src/serve';
 import { MemoryStore } from './support';
 
 async function storeWithLatest(): Promise<MemoryStore> {
@@ -51,5 +51,13 @@ describe('serve', () => {
 
     expect(response.status).toBe(405);
     expect(response.headers.get('allow')).toBe('GET, HEAD');
+  });
+
+  it('caches by path alone, so a query string cannot skip the cache', () => {
+    expect(cacheKey(request('/v1/latest.json?x=1'))?.url).toBe(
+      'https://rates.example/v1/latest.json',
+    );
+    expect(cacheKey(request('/v1/latest.json', 'HEAD'))?.method).toBe('GET');
+    expect(cacheKey(request('/v1/latest.json', 'POST'))).toBeNull();
   });
 });

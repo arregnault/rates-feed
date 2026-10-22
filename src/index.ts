@@ -11,7 +11,7 @@ import {
 import { OkxP2pUsdt } from './sources/okxP2p';
 import { OpenErApiBcvEurCross, OpenErApiBcvUsd, OpenErApiFx } from './sources/openErApi';
 import { YadioFx, YadioUsdt } from './sources/yadio';
-import { serve } from './serve';
+import { cacheKey, serve } from './serve';
 import { KvDocumentStore } from './store';
 
 interface Env {
@@ -22,13 +22,14 @@ export default {
   /** The edge cache answers repeated reads, keeping them off the KV daily read quota. */
   async fetch(request, env, context) {
     const cache = caches.default;
-    const cached = await cache.match(request);
+    const key = cacheKey(request);
+    const cached = key === null ? undefined : await cache.match(key);
     if (cached !== undefined) {
-      return cached;
+      return request.method === 'HEAD' ? new Response(null, cached) : cached;
     }
     const response = await serve(request, new KvDocumentStore(env.RATES));
-    if (response.ok && request.method === 'GET') {
-      context.waitUntil(cache.put(request, response.clone()));
+    if (key !== null && response.ok && request.method === 'GET') {
+      context.waitUntil(cache.put(key, response.clone()));
     }
     return response;
   },

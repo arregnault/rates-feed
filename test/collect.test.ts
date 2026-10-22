@@ -119,4 +119,81 @@ describe('collect', () => {
 
     expect(latest.rates.fx['COP']?.value).toBe('3174.07');
   });
+
+  describe('with a previous value', () => {
+    async function previous(): Promise<LatestDocument> {
+      return (await collect(chains(), null, new Date('2026-10-21T12:00:00Z'), () => {})).latest;
+    }
+
+    it('skips a source that jumped too far and takes the next one', async () => {
+      const warnings: string[] = [];
+
+      const { latest } = await collect(
+        chains({
+          bcvUsd: [source('dolarapi', reading('8.833963')), source('open-er-api', reading('884'))],
+        }),
+        await previous(),
+        NOW,
+        (message) => warnings.push(message),
+      );
+
+      expect(latest.rates.bcvUsd).toMatchObject({ value: '884', source: 'open-er-api' });
+      expect(warnings).toEqual(['dolarapi: value moved more than 30% from 883.3963']);
+    });
+
+    it('accepts a large move when two sources agree on it', async () => {
+      const { latest } = await collect(
+        chains({
+          bcvUsd: [source('dolarapi', reading('1300')), source('open-er-api', reading('1290'))],
+        }),
+        await previous(),
+        NOW,
+        () => undefined,
+      );
+
+      expect(latest.rates.bcvUsd).toMatchObject({ value: '1290', source: 'open-er-api' });
+    });
+
+    it('keeps the previous value when a large move is not confirmed', async () => {
+      const { latest, fresh } = await collect(
+        chains({ usdt: [source('bybit-p2p', usdt('2500'))] }),
+        await previous(),
+        NOW,
+        () => undefined,
+      );
+
+      expect(fresh.usdt).toBeNull();
+      expect(latest.rates.usdt?.value).toBe('1005.65');
+    });
+
+    it('checks each foreign currency against its own previous value', async () => {
+      const { latest } = await collect(
+        chains({
+          fx: [
+            source('currency-api', fx({ COP: '31.7407' })),
+            source('open-er-api', fx({ COP: '3160' }, '2026-10-21')),
+          ],
+        }),
+        await previous(),
+        NOW,
+        () => undefined,
+      );
+
+      expect(latest.rates.fx['COP']).toMatchObject({ value: '3160', source: 'open-er-api' });
+    });
+  });
+
+  it('never publishes a value that is not positive', async () => {
+    const warnings: string[] = [];
+
+    const { fresh } = await collect(
+      chains({ bcvUsd: [source('dolarapi', reading('0'))] }),
+      null,
+      NOW,
+      (message) => warnings.push(message),
+    );
+
+    expect(fresh.bcvUsd).toBeNull();
+    expect(warnings).toEqual(['dolarapi: value is not positive']);
+  });
 });

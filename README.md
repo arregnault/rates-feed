@@ -18,6 +18,12 @@ que no se publica. Si todas
 las fuentes de un dato fallan, ese dato conserva su último valor y su
 `fetchedAt` antiguo, para que quien lo consuma sepa que está desactualizado.
 
+Un valor que no es positivo, o que se aleja más de un 30 % del último
+publicado, cuenta como fallo de esa fuente y se prueba la siguiente. Un
+movimiento así solo se publica si otra fuente lo confirma con una diferencia de
+menos del 5 %; así una fuente rota no publica un valor absurdo y un cambio real
+grande sigue entrando.
+
 ## Fuentes
 
 | Dato          | Orden                                                                                                                                             |
@@ -61,7 +67,7 @@ curl https://rates.apparus.app/v1/latest.json
 | Recurso                 | Límite diario | Uso previsto                                                                    |
 | ----------------------- | ------------- | ------------------------------------------------------------------------------- |
 | Peticiones al Worker    | 100.000       | Las de quien consuma el feed, más 288 ejecuciones programadas                   |
-| Lecturas de KV          | 100.000       | Pocas: la caché de Cloudflare responde las peticiones repetidas                 |
+| Lecturas de KV          | 100.000       | Pocas: la caché de Cloudflare responde las peticiones repetidas, por ruta       |
 | Escrituras en KV        | 1.000         | Unas 600: `latest.json` en cada ejecución y el mes solo cuando cambia           |
 | Eventos de Workers Logs | 200.000       | Unos pocos miles: una ejecución y sus avisos cada 5 minutos, más las peticiones |
 

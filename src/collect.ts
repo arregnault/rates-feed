@@ -1,4 +1,4 @@
-import { formatDecimal } from './decimal';
+import { formatDecimal, parseDecimal, type Decimal } from './decimal';
 import type {
   FxReading,
   LatestDocument,
@@ -33,11 +33,13 @@ export async function collect(
   warn: Warn,
 ): Promise<{ latest: LatestDocument; fresh: FreshQuotes }> {
   const fetchedAt = now.toISOString();
+  const published = (quote: PublishedQuote | null | undefined) =>
+    quote ? parseDecimal(quote.value) : null;
   const [bcvUsd, bcvEur, usdt, fx] = await Promise.all([
-    firstSuccessful(chains.bcvUsd, warn),
-    firstSuccessful(chains.bcvEur, warn),
-    firstSuccessful(chains.usdt, warn),
-    collectFx(chains.fx, fetchedAt, warn),
+    firstPlausible(chains.bcvUsd, published(previous?.rates.bcvUsd), warn),
+    firstPlausible(chains.bcvEur, published(previous?.rates.bcvEur), warn),
+    firstPlausible(chains.usdt, published(previous?.rates.usdt), warn),
+    collectFx(chains.fx, previous?.rates.fx ?? {}, fetchedAt, warn),
   ]);
 
   const fresh: FreshQuotes = {
@@ -66,13 +68,64 @@ export async function collect(
   };
 }
 
-async function firstSuccessful<T>(
+/** A move this large since the last published value is more likely a broken source. */
+const MAX_JUMP_PERCENT = 30n;
+
+/** Two sources this close to each other confirm a large move as real. */
+const AGREEMENT_PERCENT = 5n;
+
+function within(value: Decimal, reference: Decimal, percent: bigint): boolean {
+  const difference = value > reference ? value - reference : reference - value;
+  return difference * 100n <= reference * percent;
+}
+
+interface Candidate<T> {
+  source: string;
+  reading: T;
+  value: Decimal;
+}
+
+/**
+ * Whether [candidate] can be published after [previous]: it must be positive and, when it
+ * moved too far, confirmed by another of the [far] readings.
+ */
+function plausible<T>(
+  candidate: Candidate<T>,
+  previous: Decimal | null,
+  far: Candidate<T>[],
+  warn: Warn,
+  label: string,
+): boolean {
+  if (candidate.value <= 0n) {
+    warn(`${candidate.source}: ${label} is not positive`);
+    return false;
+  }
+  if (previous === null || within(candidate.value, previous, MAX_JUMP_PERCENT)) {
+    return true;
+  }
+  if (far.some((other) => within(candidate.value, other.value, AGREEMENT_PERCENT))) {
+    return true;
+  }
+  warn(
+    `${candidate.source}: ${label} moved more than ${MAX_JUMP_PERCENT}% from ${formatDecimal(previous)}`,
+  );
+  far.push(candidate);
+  return false;
+}
+
+async function firstPlausible<T extends Reading>(
   chain: readonly Source<T>[],
+  previous: Decimal | null,
   warn: Warn,
 ): Promise<{ source: string; reading: T } | null> {
+  const far: Candidate<T>[] = [];
   for (const source of chain) {
     try {
-      return { source: source.name, reading: await source.read() };
+      const reading = await source.read();
+      const candidate = { source: source.name, reading, value: reading.value };
+      if (plausible(candidate, previous, far, warn, 'value')) {
+        return candidate;
+      }
     } catch (error) {
       warn(`${source.name}: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -83,19 +136,28 @@ async function firstSuccessful<T>(
 /** Each currency falls back independently, so a source missing one code does not lose the rest. */
 async function collectFx(
   chain: readonly Source<FxReading>[],
+  previous: Record<string, PublishedQuote>,
   fetchedAt: string,
   warn: Warn,
 ): Promise<Record<string, PublishedQuote>> {
   const quotes: Record<string, PublishedQuote> = {};
+  const far = new Map<string, Candidate<Reading>[]>();
   for (const source of chain) {
     try {
       const reading = await source.read();
       for (const [code, value] of reading.perUsd) {
-        quotes[code] ??= publish(
-          { value, effectiveDate: reading.effectiveDate },
-          source.name,
-          fetchedAt,
-        );
+        if (quotes[code] !== undefined) {
+          continue;
+        }
+        const quote = { value, effectiveDate: reading.effectiveDate };
+        const before = previous[code];
+        const farForCode = far.get(code) ?? [];
+        far.set(code, farForCode);
+        const candidate = { source: source.name, reading: quote, value };
+        const reference = before ? parseDecimal(before.value) : null;
+        if (plausible(candidate, reference, farForCode, warn, code)) {
+          quotes[code] = publish(quote, source.name, fetchedAt);
+        }
       }
     } catch (error) {
       warn(`${source.name}: ${error instanceof Error ? error.message : String(error)}`);
