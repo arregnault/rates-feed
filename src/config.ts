@@ -26,6 +26,8 @@ export const FX_CURRENCIES = [
 ] as const;
 
 export const URLS = {
+  bcvSecure: 'https://www.bcv.org.ve/',
+  bcvPlain: 'http://www.bcv.org.ve/',
   dolarApiDollars: 'https://ve.dolarapi.com/v1/dolares',
   dolarApiEuros: 'https://ve.dolarapi.com/v1/euros',
   dolarApiDollarHistory: 'https://ve.dolarapi.com/v1/historicos/dolares',

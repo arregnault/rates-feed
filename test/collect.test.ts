@@ -196,4 +196,83 @@ describe('collect', () => {
     expect(fresh.bcvUsd).toBeNull();
     expect(warnings).toEqual(['dolarapi: value is not positive']);
   });
+
+  describe('the BCV next rate', () => {
+    const afternoon = new Date('2026-10-21T21:00:00Z');
+
+    it('publishes a reading dated after today as next and takes today from the rest', async () => {
+      const { latest, fresh } = await collect(
+        chains({
+          bcvUsd: [
+            source('bcv', reading('884.7496', '2026-10-22')),
+            source('dolarapi', reading('883.3963', '2026-10-21')),
+          ],
+        }),
+        null,
+        afternoon,
+        () => undefined,
+      );
+
+      expect(latest.rates.bcvUsd).toMatchObject({ value: '883.3963', source: 'dolarapi' });
+      expect(latest.rates.bcvUsdNext).toMatchObject({
+        value: '884.7496',
+        effectiveDate: '2026-10-22',
+        source: 'bcv',
+      });
+      expect(fresh.bcvUsd?.effectiveDate).toBe('2026-10-21');
+    });
+
+    it('keeps the next rate until its date, then drops it', async () => {
+      const withNext = (
+        await collect(
+          chains({ bcvUsd: [source('bcv', reading('884.7496', '2026-10-22'))] }),
+          null,
+          afternoon,
+          () => undefined,
+        )
+      ).latest;
+
+      const evening = await collect(
+        chains({ bcvUsd: [failing('bcv', 'down')] }),
+        withNext,
+        new Date('2026-10-22T02:00:00Z'),
+        () => undefined,
+      );
+      expect(evening.latest.rates.bcvUsdNext?.value).toBe('884.7496');
+
+      const nextMorning = await collect(
+        chains({ bcvUsd: [source('bcv', reading('884.7496', '2026-10-22'))] }),
+        evening.latest,
+        new Date('2026-10-22T13:00:00Z'),
+        () => undefined,
+      );
+      expect(nextMorning.latest.rates.bcvUsd).toMatchObject({ value: '884.7496', source: 'bcv' });
+      expect(nextMorning.latest.rates.bcvUsdNext).toBeNull();
+    });
+
+    it('accepts an unverified reading only close to the last published value', async () => {
+      const previous = (await collect(chains(), null, NOW, () => {})).latest;
+      const unverified = (value: string): Reading => ({ ...reading(value), verified: false });
+      const warnings: string[] = [];
+
+      const near = await collect(
+        chains({ bcvUsd: [source('bcv', unverified('890'))] }),
+        previous,
+        NOW,
+        () => undefined,
+      );
+      const far = await collect(
+        chains({
+          bcvUsd: [source('bcv', unverified('1000')), source('dolarapi', reading('884'))],
+        }),
+        previous,
+        NOW,
+        (message) => warnings.push(message),
+      );
+
+      expect(near.latest.rates.bcvUsd).toMatchObject({ value: '890', source: 'bcv' });
+      expect(far.latest.rates.bcvUsd).toMatchObject({ value: '884', source: 'dolarapi' });
+      expect(warnings).toEqual(['bcv: unverified value is not within 5% of the last']);
+    });
+  });
 });

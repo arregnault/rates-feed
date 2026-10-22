@@ -1,5 +1,6 @@
 import { runFeed } from './feed';
 import { createJsonClient } from './http';
+import { BcvEur, BcvUsd, createBcvPage, createPageFetcher } from './sources/bcv';
 import { BybitP2pUsdt } from './sources/bybitP2p';
 import { CurrencyApiFx } from './sources/currencyApi';
 import {
@@ -36,13 +37,14 @@ export default {
 
   async scheduled(controller, env, context) {
     const http = createJsonClient();
+    const bcv = createBcvPage(createPageFetcher());
     const now = new Date(controller.scheduledTime);
     context.waitUntil(
       runFeed({
         store: new KvDocumentStore(env.RATES),
         chains: {
-          bcvUsd: [new DolarApiBcvUsd(http), new OpenErApiBcvUsd(http)],
-          bcvEur: [new DolarApiBcvEur(http), new OpenErApiBcvEurCross(http)],
+          bcvUsd: [new BcvUsd(bcv), new DolarApiBcvUsd(http), new OpenErApiBcvUsd(http)],
+          bcvEur: [new BcvEur(bcv), new DolarApiBcvEur(http), new OpenErApiBcvEurCross(http)],
           usdt: [
             new BybitP2pUsdt(http, () => now),
             new OkxP2pUsdt(http, () => now),

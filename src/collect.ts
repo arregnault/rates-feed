@@ -1,3 +1,4 @@
+import { caracasDate } from './dates';
 import { formatDecimal, parseDecimal, type Decimal } from './decimal';
 import type {
   FxReading,
@@ -35,16 +36,17 @@ export async function collect(
   const fetchedAt = now.toISOString();
   const published = (quote: PublishedQuote | null | undefined) =>
     quote ? parseDecimal(quote.value) : null;
+  const today = caracasDate(now);
   const [bcvUsd, bcvEur, usdt, fx] = await Promise.all([
-    firstPlausible(chains.bcvUsd, published(previous?.rates.bcvUsd), warn),
-    firstPlausible(chains.bcvEur, published(previous?.rates.bcvEur), warn),
+    currentAndNext(chains.bcvUsd, published(previous?.rates.bcvUsd), today, warn),
+    currentAndNext(chains.bcvEur, published(previous?.rates.bcvEur), today, warn),
     firstPlausible(chains.usdt, published(previous?.rates.usdt), warn),
     collectFx(chains.fx, previous?.rates.fx ?? {}, fetchedAt, warn),
   ]);
 
   const fresh: FreshQuotes = {
-    bcvUsd: bcvUsd && publish(bcvUsd.reading, bcvUsd.source, fetchedAt),
-    bcvEur: bcvEur && publish(bcvEur.reading, bcvEur.source, fetchedAt),
+    bcvUsd: bcvUsd.current && publish(bcvUsd.current.reading, bcvUsd.current.source, fetchedAt),
+    bcvEur: bcvEur.current && publish(bcvEur.current.reading, bcvEur.current.source, fetchedAt),
     usdt: usdt && {
       ...publish(usdt.reading, usdt.source, fetchedAt),
       bid: formatDecimal(usdt.reading.bid),
@@ -61,6 +63,8 @@ export async function collect(
       rates: {
         bcvUsd: fresh.bcvUsd ?? previous?.rates.bcvUsd ?? null,
         bcvEur: fresh.bcvEur ?? previous?.rates.bcvEur ?? null,
+        bcvUsdNext: next(bcvUsd.next, previous?.rates.bcvUsdNext, today, fetchedAt),
+        bcvEurNext: next(bcvEur.next, previous?.rates.bcvEurNext, today, fetchedAt),
         usdt: fresh.usdt ?? previous?.rates.usdt ?? null,
         fx: { ...previous?.rates.fx, ...fresh.fx },
       },
@@ -83,11 +87,13 @@ interface Candidate<T> {
   source: string;
   reading: T;
   value: Decimal;
+  verified: boolean;
 }
 
 /**
  * Whether [candidate] can be published after [previous]: it must be positive and, when it
- * moved too far, confirmed by another of the [far] readings.
+ * moved too far, confirmed by another of the [far] readings. An unverified reading must stay
+ * close to [previous] and can neither confirm nor be confirmed.
  */
 function plausible<T>(
   candidate: Candidate<T>,
@@ -98,6 +104,15 @@ function plausible<T>(
 ): boolean {
   if (candidate.value <= 0n) {
     warn(`${candidate.source}: ${label} is not positive`);
+    return false;
+  }
+  if (!candidate.verified) {
+    if (previous !== null && within(candidate.value, previous, AGREEMENT_PERCENT)) {
+      return true;
+    }
+    warn(
+      `${candidate.source}: unverified ${label} is not within ${AGREEMENT_PERCENT}% of the last`,
+    );
     return false;
   }
   if (previous === null || within(candidate.value, previous, MAX_JUMP_PERCENT)) {
@@ -122,7 +137,7 @@ async function firstPlausible<T extends Reading>(
   for (const source of chain) {
     try {
       const reading = await source.read();
-      const candidate = { source: source.name, reading, value: reading.value };
+      const candidate = toCandidate(source.name, reading);
       if (plausible(candidate, previous, far, warn, 'value')) {
         return candidate;
       }
@@ -131,6 +146,52 @@ async function firstPlausible<T extends Reading>(
     }
   }
   return null;
+}
+
+function toCandidate<T extends Reading>(source: string, reading: T): Candidate<T> {
+  return { source, reading, value: reading.value, verified: reading.verified ?? true };
+}
+
+/**
+ * The BCV publishes each afternoon the rate of the next business day. A reading dated after
+ * [today] is that next rate; the current one then comes from the rest of the chain, or stays.
+ */
+async function currentAndNext(
+  chain: readonly Source<Reading>[],
+  previous: Decimal | null,
+  today: string,
+  warn: Warn,
+): Promise<{ current: Candidate<Reading> | null; next: Candidate<Reading> | null }> {
+  const far: Candidate<Reading>[] = [];
+  let next: Candidate<Reading> | null = null;
+  for (const source of chain) {
+    try {
+      const candidate = toCandidate(source.name, await source.read());
+      if (!plausible(candidate, previous, far, warn, 'value')) {
+        continue;
+      }
+      if (candidate.reading.effectiveDate <= today) {
+        return { current: candidate, next };
+      }
+      next ??= candidate;
+    } catch (error) {
+      warn(`${source.name}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  return { current: null, next };
+}
+
+/** A next rate is shown until its value date arrives, when it becomes the current one. */
+function next(
+  fresh: Candidate<Reading> | null,
+  previous: PublishedQuote | null | undefined,
+  today: string,
+  fetchedAt: string,
+): PublishedQuote | null {
+  if (fresh !== null) {
+    return publish(fresh.reading, fresh.source, fetchedAt);
+  }
+  return previous && previous.effectiveDate > today ? previous : null;
 }
 
 /** Each currency falls back independently, so a source missing one code does not lose the rest. */
@@ -153,7 +214,7 @@ async function collectFx(
         const before = previous[code];
         const farForCode = far.get(code) ?? [];
         far.set(code, farForCode);
-        const candidate = { source: source.name, reading: quote, value };
+        const candidate = toCandidate(source.name, quote);
         const reference = before ? parseDecimal(before.value) : null;
         if (plausible(candidate, reference, farForCode, warn, code)) {
           quotes[code] = publish(quote, source.name, fetchedAt);

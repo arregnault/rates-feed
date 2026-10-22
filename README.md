@@ -7,10 +7,10 @@ delante; todo dentro del plan gratuito y sin método de pago.
 
 ## Qué publica
 
-| Ruta                      | Contenido                                                                                                               | Caché                                      |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `v1/latest.json`          | Tasas actuales: BCV dólar y euro, USDT y monedas extra por dólar, cada una con fuente, fecha efectiva y hora de captura | 2 min                                      |
-| `v1/history/AAAA-MM.json` | Cierre de cada día del mes                                                                                              | 15 min el mes en curso, 1 año los cerrados |
+| Ruta                      | Contenido                                                                                                                                                                    | Caché                                      |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `v1/latest.json`          | Tasas actuales: BCV dólar y euro (y los del siguiente día hábil, si ya se publicaron), USDT y monedas extra por dólar, cada una con fuente, fecha efectiva y hora de captura | 2 min                                      |
+| `v1/history/AAAA-MM.json` | Cierre de cada día del mes                                                                                                                                                   | 15 min el mes en curso, 1 año los cerrados |
 
 Se ejecuta cada 5 minutos, porque el USDT cambia a lo largo del día. El
 progreso de la carga inicial del histórico se guarda en `v1/meta/backfill.json`,
@@ -24,12 +24,24 @@ movimiento así solo se publica si otra fuente lo confirma con una diferencia de
 menos del 5 %; así una fuente rota no publica un valor absurdo y un cambio real
 grande sigue entrando.
 
+El BCV publica cada tarde de día hábil la tasa del siguiente día hábil (un
+viernes, la del lunes). Una lectura con fecha valor posterior a hoy (en
+Caracas) se publica como `bcvUsdNext` o `bcvEurNext`, y la tasa actual sale del
+resto de fuentes o conserva su valor. Al llegar esa fecha valor pasa a ser la
+actual y el campo vuelve a `null`. Los dos campos son nuevos y opcionales en
+`v1/`: quien no los conozca los ignora.
+
+La página del BCV se lee por HTTPS. Si la conexión falla (por ejemplo, por un
+certificado vencido), se intenta por HTTP; como esa lectura no está autenticada
+y alguien en el camino podría alterarla, solo se acepta si está a menos de un
+5 % del último valor publicado.
+
 ## Fuentes
 
 | Dato          | Orden                                                                                                                                             |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| BCV dólar     | ve.dolarapi.com, open.er-api.com                                                                                                                  |
-| BCV euro      | ve.dolarapi.com, cruce aproximado de open.er-api.com (no entra al histórico)                                                                      |
+| BCV dólar     | bcv.org.ve (con su fecha valor), ve.dolarapi.com, open.er-api.com                                                                                 |
+| BCV euro      | bcv.org.ve, ve.dolarapi.com, cruce aproximado de open.er-api.com (no entra al histórico)                                                          |
 | USDT          | Bybit P2P, OKX P2P (en ambos, promedio de la mediana de los primeros 10 anuncios de compra y de venta), api.yadio.io, paralelo de ve.dolarapi.com |
 | Monedas extra | currency-api (jsDelivr), open.er-api.com, api.yadio.io                                                                                            |
 
