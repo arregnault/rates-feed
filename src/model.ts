@@ -3,6 +3,8 @@ import type { Decimal } from './decimal';
 export interface Reading {
   value: Decimal;
   effectiveDate: string;
+  /** False when read over plain HTTP, where anyone on the way could have changed it. */
+  verified?: boolean;
 }
 
 export interface UsdtReading extends Reading {
@@ -39,6 +41,9 @@ export interface LatestDocument {
   rates: {
     bcvUsd: PublishedQuote | null;
     bcvEur: PublishedQuote | null;
+    /** The BCV rates already published for a later value date, until that date arrives. */
+    bcvUsdNext?: PublishedQuote | null;
+    bcvEurNext?: PublishedQuote | null;
     usdt: PublishedUsdt | null;
     fx: Record<string, PublishedQuote>;
   };
