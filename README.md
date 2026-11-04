@@ -12,7 +12,10 @@ delante; todo dentro del plan gratuito y sin método de pago.
 | `v1/latest.json`          | Tasas actuales: BCV dólar y euro (y los del siguiente día hábil, si ya se publicaron), USDT y monedas extra por dólar, cada una con fuente, fecha efectiva y hora de captura | 2 min                                      |
 | `v1/history/AAAA-MM.json` | Cierre de cada día del mes                                                                                                                                                   | 15 min el mes en curso, 1 año los cerrados |
 
-Se ejecuta cada 5 minutos, porque el USDT cambia a lo largo del día. El
+Se ejecuta cada 5 minutos, porque el USDT cambia a lo largo del día.
+`v1/latest.json` se reescribe en cada ejecución; el mes en curso, una vez por
+hora y en la última ejecución del día de Caracas, para no gastar la cuota
+diaria de escrituras de KV en un documento que guarda un valor por día. El
 progreso de la carga inicial del histórico se guarda en `v1/meta/backfill.json`,
 que no se publica. Si todas
 las fuentes de un dato fallan, ese dato conserva su último valor y su

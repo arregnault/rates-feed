@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SourceChains } from '../src/collect';
-import { KEYS, runFeed, type BackfillLoader } from '../src/feed';
+import { historyDue, KEYS, runFeed, type BackfillLoader } from '../src/feed';
 import type { LatestDocument, MonthDocument } from '../src/model';
 import { BybitP2pUsdt } from '../src/sources/bybitP2p';
 import { CurrencyApiFx } from '../src/sources/currencyApi';
@@ -90,6 +90,20 @@ describe('runFeed', () => {
     await run(store, () => readDolarApiHistory(fakeHttp()));
 
     expect(store.writes).toEqual([KEYS.latest]);
+  });
+
+  it('writes the open month once an hour and on the last run of the Caracas day', async () => {
+    const store = new MemoryStore();
+    await run(store, () => readDolarApiHistory(fakeHttp()));
+    store.writes.length = 0;
+
+    await run(store, () => readDolarApiHistory(fakeHttp()), new Date('2026-10-21T13:05:00Z'));
+
+    expect(store.writes).toEqual([KEYS.latest]);
+    expect(historyDue(new Date('2026-10-21T14:00:00Z'))).toBe(true);
+    expect(historyDue(new Date('2026-10-21T14:30:00Z'))).toBe(false);
+    expect(historyDue(new Date('2026-10-22T03:55:00Z'))).toBe(true);
+    expect(historyDue(new Date('2026-10-22T03:50:00Z'))).toBe(false);
   });
 
   it('retries the backfill on the next run when it fails', async () => {

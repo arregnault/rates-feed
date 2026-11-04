@@ -44,8 +44,22 @@ export async function runFeed({
 
   const currentMonth = monthOf(caracasDate(now));
   await backfillStep(store, loadBackfill, currentMonth, warn);
-  await writeHistory(store, patchesFromFresh(fresh), currentMonth);
+  if (historyDue(now)) {
+    await writeHistory(store, patchesFromFresh(fresh), currentMonth);
+  }
   return latest;
+}
+
+const RUN_EVERY_MINUTES = 5;
+
+/**
+ * The open month takes the day's values once an hour and on the last run of the Caracas day,
+ * which closes it. Every run would spend more than half of the KV daily write quota on a
+ * document that keeps one value per day.
+ */
+export function historyDue(now: Date): boolean {
+  const nextRun = new Date(now.getTime() + RUN_EVERY_MINUTES * 60_000);
+  return now.getUTCMinutes() < RUN_EVERY_MINUTES || caracasDate(nextRun) !== caracasDate(now);
 }
 
 /** Spread over several runs so a single invocation stays within the free plan's CPU limit. */
