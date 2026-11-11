@@ -184,6 +184,15 @@ describe('official backfill', () => {
     expect(localBackfill(serving({}), 'UYU', now)).toEqual([]);
   });
 
+  it('starts each official history on the first day its source published', () => {
+    const historyFrom = Object.fromEntries(
+      INDEX.currencies.flatMap((currency) => currency.references.map((r) => [r.id, r.historyFrom])),
+    );
+
+    expect(historyFrom['bob.official']).toBe('2023-01-02');
+    expect(historyFrom['cop.trm']).toBe('2023-01-04');
+  });
+
   it('lists every official and market reference in the catalog', () => {
     const ids = INDEX.currencies.flatMap((currency) => currency.references.map((r) => r.id));
 
