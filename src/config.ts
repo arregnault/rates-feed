@@ -61,6 +61,7 @@ export const OFFICIAL_URLS = {
   bcrpSbs: (from: string, to: string) =>
     `https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PD04640PD/json/${from}/${to}`,
   dolarApiMexico: 'https://mx.dolarapi.com/v1/cotizaciones',
+  dolarApiBolivia: 'https://bo.dolarapi.com/v1/dolares/oficial',
   currencyApiOn: (date: string) =>
     `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${date}/v1/currencies/usd.json`,
 };

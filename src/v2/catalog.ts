@@ -16,6 +16,7 @@ export const REFERENCE_IDS = {
 export const TIME_ZONES = {
   VES: 'America/Caracas',
   ARS: 'America/Argentina/Buenos_Aires',
+  BOB: 'America/La_Paz',
   BRL: 'America/Sao_Paulo',
   CLP: 'America/Santiago',
   COP: 'America/Bogota',
@@ -32,6 +33,7 @@ export type CurrencyCode = keyof typeof TIME_ZONES;
 /** Local currencies whose USDT P2P market the feed reads, besides the bolivar from v1. */
 export const P2P_CURRENCIES = [
   'ARS',
+  'BOB',
   'BRL',
   'CLP',
   'COP',
@@ -51,6 +53,7 @@ export function p2pId(currency: CurrencyCode): string {
 const P2P_HISTORY_FROM = '2026-11-11';
 
 const CURRENCY_NAMES: Record<Exclude<(typeof P2P_CURRENCIES)[number], 'ARS'>, string> = {
+  BOB: 'Boliviano',
   BRL: 'Real brasileño',
   CLP: 'Peso chileno',
   COP: 'Peso colombiano',
@@ -167,6 +170,7 @@ const P2P_REFERENCE = (currency: CurrencyCode): Reference => ({
 
 /** The official rate of each currency that has one source for it, with history where it has. */
 export const OFFICIAL_REFERENCES = {
+  BOB: { id: 'bob.official', name: 'Dólar oficial', historyFrom: HISTORY_FROM },
   BRL: { id: 'brl.ptax', name: 'Dólar PTAX', historyFrom: HISTORY_FROM },
   CLP: { id: 'clp.observed', name: 'Dólar observado', historyFrom: HISTORY_FROM },
   COP: { id: 'cop.trm', name: 'TRM', historyFrom: HISTORY_FROM },

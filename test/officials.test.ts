@@ -8,13 +8,14 @@ import {
   BcrpSbs,
   CurrencyApiMarket,
   DatosGovCoTrm,
+  DolarApiBoliviaOfficial,
   DolarApiMexicoFix,
   MindicadorDollar,
   readBcrp,
   readCurrencyApiOn,
 } from '../src/sources/officials';
 import { INDEX } from '../src/v2/catalog';
-import { localBackfill } from '../src/v2/officials';
+import { localBackfill, localChain } from '../src/v2/officials';
 import { fixture } from './support';
 
 function serving(responses: Record<string, unknown>): JsonClient {
@@ -81,6 +82,24 @@ describe('official rates', () => {
     expect([formatDecimal(reading.value), reading.effectiveDate]).toEqual(['18.6678', TODAY]);
   });
 
+  it('reads the Bolivian official rate on the date its timestamp names', async () => {
+    const http = serving({ [OFFICIAL_URLS.dolarApiBolivia]: fixture('dolarapi-bo') });
+
+    const reading = await new DolarApiBoliviaOfficial(http).read();
+
+    expect([formatDecimal(reading.value), reading.effectiveDate]).toEqual(['11.71', '2026-11-11']);
+  });
+
+  it('falls back to the market rate for Bolivia', () => {
+    const chain = localChain(serving({}), 'BOB', new Date('2026-11-10T15:00:00Z'));
+
+    expect([chain.id, ...chain.sources.map((source) => source.name)]).toEqual([
+      'bob.official',
+      'dolarapi',
+      'currency-api',
+    ]);
+  });
+
   it('fails when nothing is dated today or earlier', async () => {
     const http = serving({ [OFFICIAL_URLS.trm(addDays('2020-01-01', -10))]: fixture('trm') });
 
@@ -129,6 +148,18 @@ describe('official backfill', () => {
     expect(localBackfill(http, 'MXN', now)).toEqual([]);
   });
 
+  it('loads the fixed Bolivian rate on weekdays, then the recorded daily rates', async () => {
+    const [task] = localBackfill(serving({}), 'BOB', now);
+
+    const days = (await task?.load())?.BOB ?? {};
+
+    expect(task?.key).toBe('bob:official');
+    expect(days['2023-01-01']).toBeUndefined();
+    expect(days['2023-01-02']).toEqual({ 'bob.official': { value: '6.96', source: 'bcb' } });
+    expect(days['2026-06-26']).toEqual({ 'bob.official': { value: '6.96', source: 'bcb' } });
+    expect(days['2026-06-29']).toEqual({ 'bob.official': { value: '9.73', source: 'bcb' } });
+  });
+
   it('loads market rates five days per task for every market currency, skipping missing dates', async () => {
     const responses: Record<string, unknown> = {};
     for (let offset = 0; offset < 5; offset += 1) {
@@ -163,6 +194,8 @@ describe('official backfill', () => {
         'brl.ptax',
         'pen.sbs',
         'mxn.fix',
+        'bob.official',
+        'bob.usdt_p2p',
         'uyu.market',
       ]),
     );
