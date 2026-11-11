@@ -1,4 +1,5 @@
 import { addDays, lastDayOf, monthOf } from '../dates';
+import type { DatedValue } from '../model';
 import type { LatestQuote, MonthV2, Quote } from './model';
 
 /** A value as its source published it on one date. */
@@ -24,6 +25,15 @@ export function sparseFromLatest(fresh: readonly LatestQuote[]): SparseDays {
       ...days[quote.since],
       [quote.id]: { value: quote.value, source: quote.source },
     };
+  }
+  return days;
+}
+
+/** A source's dated values as the history of one reference. */
+export function sparseOf(points: readonly DatedValue[], id: string, source: string): SparseDays {
+  const days: SparseDays = {};
+  for (const { date, value } of points) {
+    days[date] = { [id]: { value, source } };
   }
   return days;
 }

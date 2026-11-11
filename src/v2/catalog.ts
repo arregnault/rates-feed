@@ -50,8 +50,7 @@ export function p2pId(currency: CurrencyCode): string {
 /** No public source keeps past P2P prices: the history of these starts when the feed began. */
 const P2P_HISTORY_FROM = '2026-11-11';
 
-const CURRENCY_NAMES: Record<(typeof P2P_CURRENCIES)[number], string> = {
-  ARS: 'Peso argentino',
+const CURRENCY_NAMES: Record<Exclude<(typeof P2P_CURRENCIES)[number], 'ARS'>, string> = {
   BRL: 'Real brasileño',
   CLP: 'Peso chileno',
   COP: 'Peso colombiano',
@@ -166,25 +165,61 @@ const P2P_REFERENCE = (currency: CurrencyCode): Reference => ({
   historyFrom: P2P_HISTORY_FROM,
 });
 
-/** The curated references of each currency, then its P2P one; currencies with only P2P after. */
+/** The official rate of each currency that has one source for it, with history where it has. */
+export const OFFICIAL_REFERENCES = {
+  BRL: { id: 'brl.ptax', name: 'Dólar PTAX', historyFrom: HISTORY_FROM },
+  CLP: { id: 'clp.observed', name: 'Dólar observado', historyFrom: HISTORY_FROM },
+  COP: { id: 'cop.trm', name: 'TRM', historyFrom: HISTORY_FROM },
+  MXN: { id: 'mxn.fix', name: 'Dólar FIX', historyFrom: P2P_HISTORY_FROM },
+  PEN: { id: 'pen.sbs', name: 'Dólar SBS', historyFrom: HISTORY_FROM },
+} as const satisfies Partial<Record<CurrencyCode, Omit<Reference, 'kind' | 'base'>>>;
+
+/** Currencies without one official source: a market rate stands in. */
+export const MARKET_CURRENCIES = [
+  'CRC',
+  'DOP',
+  'PYG',
+  'UYU',
+] as const satisfies readonly CurrencyCode[];
+
+/** The first date currency-api keeps. */
+export const MARKET_HISTORY_FROM = '2024-03-02';
+
+export function marketId(currency: CurrencyCode): string {
+  return `${currency.toLowerCase()}.market`;
+}
+
+function localReference(code: Exclude<(typeof P2P_CURRENCIES)[number], 'ARS'>): Reference {
+  if (code in OFFICIAL_REFERENCES) {
+    return {
+      ...OFFICIAL_REFERENCES[code as keyof typeof OFFICIAL_REFERENCES],
+      kind: 'official',
+      base: 'USD',
+    };
+  }
+  return {
+    id: marketId(code),
+    name: 'Dólar de mercado',
+    kind: 'market',
+    base: 'USD',
+    historyFrom: MARKET_HISTORY_FROM,
+  };
+}
+
+/** Each currency's references, its USDT P2P last. */
 export const INDEX: IndexDocument = {
   schemaVersion: 2,
   currencies: [
     ...CURATED.map((currency) =>
-      (P2P_CURRENCIES as readonly string[]).includes(currency.code)
-        ? {
-            ...currency,
-            references: [...currency.references, P2P_REFERENCE(currency.code as CurrencyCode)],
-          }
+      currency.code === 'ARS'
+        ? { ...currency, references: [...currency.references, P2P_REFERENCE('ARS')] }
         : currency,
     ),
-    ...P2P_CURRENCIES.filter((code) => !CURATED.some((currency) => currency.code === code)).map(
-      (code) => ({
-        code,
-        name: CURRENCY_NAMES[code],
-        timeZone: TIME_ZONES[code],
-        references: [P2P_REFERENCE(code)],
-      }),
-    ),
+    ...P2P_CURRENCIES.filter((code) => code !== 'ARS').map((code) => ({
+      code,
+      name: CURRENCY_NAMES[code],
+      timeZone: TIME_ZONES[code],
+      references: [localReference(code), P2P_REFERENCE(code)],
+    })),
   ],
 };

@@ -20,7 +20,7 @@ import { cacheKey, serve } from './serve';
 import { KvDocumentStore } from './store';
 
 /** Fallback reads per run, within the free plan's 50 subrequests with the primary sources. */
-const MAX_FALLBACK_READS = 5;
+const MAX_FALLBACK_READS = 4;
 
 interface Env {
   RATES: KVNamespace;

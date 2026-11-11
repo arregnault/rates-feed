@@ -1,0 +1,37 @@
+{
+    "config": {
+        "title": "Tipo de cambio",
+        "series": [
+            {
+                "name": "Tipo de cambio - TC Sistema bancario SBS (S/ por US$) - Venta",
+                "dec": "3"
+            }
+        ]
+    },
+    "periods": [
+        {
+            "name": "29.Set.26",
+            "values": [
+                "3.45"
+            ]
+        },
+        {
+            "name": "30.Set.26",
+            "values": [
+                "3.437"
+            ]
+        },
+        {
+            "name": "01.Oct.26",
+            "values": [
+                "3.454"
+            ]
+        },
+        {
+            "name": "02.Oct.26",
+            "values": [
+                "3.442"
+            ]
+        }
+    ]
+}

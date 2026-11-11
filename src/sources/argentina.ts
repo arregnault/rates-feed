@@ -3,7 +3,7 @@ import { ARGENTINA_DATOS_URLS, URLS } from '../config';
 import { localDate } from '../dates';
 import { formatDecimal, parseDecimal } from '../decimal';
 import type { JsonClient } from '../http';
-import type { Source } from '../model';
+import type { DatedValue, Source } from '../model';
 import { TIME_ZONES } from '../v2/catalog';
 import type { ReferenceReading } from '../v2/collect';
 
@@ -86,11 +86,6 @@ export class ArgentinaDatosDay implements Source<ReferenceReading> {
   }
 }
 
-export interface DayValue {
-  date: string;
-  value: string;
-}
-
 /**
  * The full series of a house, one entry per calendar day. Only dates from [from] are validated,
  * which keeps the run within the free plan's CPU limit.
@@ -99,7 +94,7 @@ export async function readArgentinaDatosHistory(
   http: JsonClient,
   house: ArgentinaHouse,
   from: string,
-): Promise<DayValue[]> {
+): Promise<DatedValue[]> {
   const series: unknown = await http(ARGENTINA_DATOS_URLS.history(house));
   if (!Array.isArray(series)) {
     throw new Error(`${ARGENTINA_DATOS_URLS.history(house)} is not a list`);

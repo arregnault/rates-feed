@@ -18,6 +18,12 @@ export interface FxReading {
   perUsd: Map<string, Decimal>;
 }
 
+/** A value a source published for one calendar date, as exact decimal text. */
+export interface DatedValue {
+  date: string;
+  value: string;
+}
+
 export interface Source<T> {
   readonly name: string;
   read(): Promise<T>;
