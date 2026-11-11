@@ -1,4 +1,6 @@
 import { runFeed } from './feed';
+import { argentinaFeed } from './v2/argentina';
+import { runFeedV2 } from './v2/feed';
 import { createJsonClient } from './http';
 import { BcvEur, BcvUsd, createBcvPage, createPageFetcher } from './sources/bcv';
 import { BybitP2pUsdt } from './sources/bybitP2p';
@@ -39,24 +41,26 @@ export default {
     const http = createJsonClient();
     const bcv = createBcvPage(createPageFetcher());
     const now = new Date(controller.scheduledTime);
-    context.waitUntil(
-      runFeed({
-        store: new KvDocumentStore(env.RATES),
-        chains: {
-          bcvUsd: [new BcvUsd(bcv), new DolarApiBcvUsd(http), new OpenErApiBcvUsd(http)],
-          bcvEur: [new BcvEur(bcv), new DolarApiBcvEur(http), new OpenErApiBcvEurCross(http)],
-          usdt: [
-            new BybitP2pUsdt(http, () => now),
-            new OkxP2pUsdt(http, () => now),
-            new YadioUsdt(http),
-            new DolarApiParaleloUsdt(http),
-          ],
-          fx: [new CurrencyApiFx(http), new OpenErApiFx(http), new YadioFx(http)],
-        },
-        loadBackfill: () => readDolarApiHistory(http),
-        now,
-        warn: (message) => console.warn(message),
-      }),
-    );
+    const store = new KvDocumentStore(env.RATES);
+    const warn = (message: string): void => console.warn(message);
+    const v1 = runFeed({
+      store,
+      chains: {
+        bcvUsd: [new BcvUsd(bcv), new DolarApiBcvUsd(http), new OpenErApiBcvUsd(http)],
+        bcvEur: [new BcvEur(bcv), new DolarApiBcvEur(http), new OpenErApiBcvEurCross(http)],
+        usdt: [
+          new BybitP2pUsdt(http, () => now),
+          new OkxP2pUsdt(http, () => now),
+          new YadioUsdt(http),
+          new DolarApiParaleloUsdt(http),
+        ],
+        fx: [new CurrencyApiFx(http), new OpenErApiFx(http), new YadioFx(http)],
+      },
+      loadBackfill: () => readDolarApiHistory(http),
+      now,
+      warn,
+    });
+    const v2 = runFeedV2({ store, currencies: [argentinaFeed(http, () => now)], now, warn });
+    context.waitUntil(Promise.all([v1, v2]));
   },
 } satisfies ExportedHandler<Env>;

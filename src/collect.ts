@@ -128,7 +128,7 @@ function plausible<T>(
   return false;
 }
 
-async function firstPlausible<T extends Reading>(
+export async function firstPlausible<T extends Reading>(
   chain: readonly Source<T>[],
   previous: Decimal | null,
   warn: Warn,
