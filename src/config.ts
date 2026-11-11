@@ -35,14 +35,14 @@ export const URLS = {
   dolarApiEuroHistory: 'https://ve.dolarapi.com/v1/historicos/euros',
   openErApi: 'https://open.er-api.com/v6/latest/USD',
   bybitP2p: 'https://api2.bybit.com/fiat/otc/item/online',
-  okxP2pSell:
-    'https://www.okx.com/v3/c2c/tradingOrders/books?quoteCurrency=VES&baseCurrency=USDT&side=sell&paymentMethod=all&userType=all',
-  okxP2pBuy:
-    'https://www.okx.com/v3/c2c/tradingOrders/books?quoteCurrency=VES&baseCurrency=USDT&side=buy&paymentMethod=all&userType=all',
   yadio: 'https://api.yadio.io/exrates/USD',
   currencyApi:
     'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
 } as const;
+
+export function okxP2pUrl(currency: string, side: 'sell' | 'buy'): string {
+  return `https://www.okx.com/v3/c2c/tradingOrders/books?quoteCurrency=${currency}&baseCurrency=USDT&side=${side}&paymentMethod=all&userType=all`;
+}
 
 const ARGENTINA_DATOS = 'https://api.argentinadatos.com/v1/cotizaciones/dolares';
 

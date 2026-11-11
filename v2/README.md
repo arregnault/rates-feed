@@ -17,7 +17,7 @@ Base: `https://rates.apparus.app`
 | `/v2/{moneda}/latest.json`          | Valor actual de cada referencia de la moneda                | 2 min                                      |
 | `/v2/{moneda}/history/AAAA-MM.json` | Valor vigente de cada referencia, día por día               | 15 min el mes en curso, 1 año los cerrados |
 
-`{moneda}` es el código ISO 4217 en minúsculas (`ves`, `ars`). Una ruta sin datos
+`{moneda}` es el código ISO 4217 en minúsculas (`ves`, `ars`, `cop`…). Una ruta sin datos
 responde 404.
 
 ## Monedas y referencias
@@ -43,10 +43,28 @@ Las fechas se leen en la zona de cada moneda (campo `timeZone` del catálogo).
 | `ars.blue`      | Dólar blue      | `informal` | USD         | 2023-01-01      |
 | `ars.crypto`    | Dólar cripto    | `market`   | USD         | 2023-02-07      |
 | `ars.card`      | Dólar tarjeta   | `official` | USD         | 2023-01-01      |
+| `ars.usdt_p2p`  | USDT P2P        | `p2p`      | USDT        | 2026-11-11      |
 
 En Argentina `value` es el precio de venta (el que se suele citar) y, cuando
-la fuente lo da, `bid` es el de compra y `ask` el de venta. Se actualizan una
+la fuente lo da, `bid` es el de compra y `ask` el de venta. Las casas se actualizan una
 vez por hora. El histórico guarda el valor de venta de cada día.
+
+**Otras monedas con USDT P2P**
+
+| Moneda | Nombre              | Zona                    | Id             |
+| ------ | ------------------- | ----------------------- | -------------- |
+| BRL    | Real brasileño      | `America/Sao_Paulo`     | `brl.usdt_p2p` |
+| CLP    | Peso chileno        | `America/Santiago`      | `clp.usdt_p2p` |
+| COP    | Peso colombiano     | `America/Bogota`        | `cop.usdt_p2p` |
+| CRC    | Colón costarricense | `America/Costa_Rica`    | `crc.usdt_p2p` |
+| DOP    | Peso dominicano     | `America/Santo_Domingo` | `dop.usdt_p2p` |
+| MXN    | Peso mexicano       | `America/Mexico_City`   | `mxn.usdt_p2p` |
+| PEN    | Sol peruano         | `America/Lima`          | `pen.usdt_p2p` |
+| PYG    | Guaraní             | `America/Asuncion`      | `pyg.usdt_p2p` |
+| UYU    | Peso uruguayo       | `America/Montevideo`    | `uyu.usdt_p2p` |
+
+El USDT P2P de estas monedas (y `ars.usdt_p2p`) se lee cada 15 minutos y tiene
+histórico desde 2026-11-11, cuando el feed empezó a capturarlo.
 
 Cada valor es cuántas unidades de la moneda local vale una unidad de la base:
 `ves.bcv` = 899,27 significa 1 USD = 899,27 VES. Los valores son texto con
@@ -57,8 +75,8 @@ Los tipos son `official` (banco central o tasa oficial), `exchange` (bolsa),
 de USDT entre personas) y `market` (tipo de cambio de mercado de referencia).
 
 **Histórico del P2P:** ninguna fuente pública guarda el precio P2P de días
-pasados, así que el histórico de `ves.usdt_p2p` existe desde que este feed lo
-captura (2026-10-21). Entre 2026-02-14 y 2026-10-20 se usa el «paralelo» de
+pasados, así que cada referencia P2P tiene histórico desde que este feed la
+captura. El de `ves.usdt_p2p` existe desde 2026-10-21. Entre 2026-02-14 y 2026-10-20 se usa el «paralelo» de
 ve.dolarapi.com, que sigue al P2P de cerca, y cada día lo indica en `source`
 (`dolarapi-paralelo`).
 

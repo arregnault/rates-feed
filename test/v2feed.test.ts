@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { parseDecimal } from '../src/decimal';
 import type { Source } from '../src/model';
 import {
+  chainDue,
   collectGroup,
-  groupDue,
   type ReferenceGroup,
   type ReferenceReading,
 } from '../src/v2/collect';
@@ -14,6 +14,7 @@ import {
   type CurrencyFeed,
   type StoredLatest,
 } from '../src/v2/feed';
+import { Guards } from '../src/v2/guards';
 import {
   denseMonth,
   mergeStoredMonth,
@@ -44,8 +45,7 @@ class FixedSource implements Source<ReferenceReading> {
 function group(...chains: [string, Source<ReferenceReading>[]][]): ReferenceGroup {
   return {
     currency: 'ARS',
-    everyMinutes: 60,
-    chains: chains.map(([id, sources]) => ({ id, sources })),
+    chains: chains.map(([id, sources]) => ({ id, everyMinutes: 60, sources })),
   };
 }
 
@@ -130,13 +130,15 @@ describe('v2 reference collection', () => {
     expect(latest.references[0]?.value).toBe('1550');
   });
 
-  it('reads a group on its period, or at once when it has no values yet', () => {
-    const hourly = group();
-    const previous: LatestV2 = { schemaVersion: 2, currency: 'ARS', updatedAt: '', references: [] };
+  it('reads a reference on its period, or at once when it has no value yet', () => {
+    const hourly = { id: 'ars.blue', everyMinutes: 60, sources: [] };
+    const quarterly = { ...hourly, everyMinutes: 15 };
+    const quote = { id: 'ars.blue', value: '1', since: '', source: '', fetchedAt: '' };
 
-    expect(groupDue(hourly, previous, new Date('2026-11-10T15:02:00Z'))).toBe(true);
-    expect(groupDue(hourly, previous, new Date('2026-11-10T15:35:00Z'))).toBe(false);
-    expect(groupDue(hourly, undefined, new Date('2026-11-10T15:35:00Z'))).toBe(true);
+    expect(chainDue(hourly, quote, new Date('2026-11-10T15:02:00Z'))).toBe(true);
+    expect(chainDue(hourly, quote, new Date('2026-11-10T15:35:00Z'))).toBe(false);
+    expect(chainDue(quarterly, quote, new Date('2026-11-10T15:31:00Z'))).toBe(true);
+    expect(chainDue(hourly, undefined, new Date('2026-11-10T15:35:00Z'))).toBe(true);
   });
 });
 
@@ -210,7 +212,11 @@ describe('v2 stored history', () => {
 });
 
 function feed(blue: FixedSource, backfill: CurrencyFeed['backfill'] = []): CurrencyFeed {
-  return { utcOffsetHours: -3, group: group(['ars.blue', [blue]]), backfill };
+  return {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    group: group(['ars.blue', [blue]]),
+    backfill,
+  };
 }
 
 describe('v2 feed run', () => {
@@ -219,6 +225,7 @@ describe('v2 feed run', () => {
 
     await runFeedV2({
       store,
+      guards: new Guards(NOW, 8),
       currencies: [feed(new FixedSource('dolarapi', '1555'))],
       now: NOW,
       warn: () => {},
@@ -236,6 +243,7 @@ describe('v2 feed run', () => {
     const store = new MemoryStore();
     await runFeedV2({
       store,
+      guards: new Guards(NOW, 8),
       currencies: [feed(new FixedSource('dolarapi', '1555'))],
       now: NOW,
       warn: () => {},
@@ -245,6 +253,7 @@ describe('v2 feed run', () => {
 
     await runFeedV2({
       store,
+      guards: new Guards(NOW, 8),
       currencies: [feed(blue)],
       now: new Date('2026-11-10T15:20:00Z'),
       warn: () => {},
@@ -270,7 +279,7 @@ describe('v2 feed run', () => {
       ]),
     ];
 
-    await runFeedV2({ store, currencies, now: NOW, warn: () => {} });
+    await runFeedV2({ store, guards: new Guards(NOW, 8), currencies, now: NOW, warn: () => {} });
 
     expect(await store.read(V2_KEYS.backfill)).toEqual({ done: ['ars:blue'] });
     const october = await store.read<StoredMonth>(V2_KEYS.month('2026-10'));
@@ -291,6 +300,7 @@ describe('v2 feed run', () => {
 
     await runFeedV2({
       store,
+      guards: new Guards(NOW, 8),
       currencies: [feed(new FixedSource('dolarapi', '1555'), [failing])],
       now: NOW,
       warn: (message) => warnings.push(message),

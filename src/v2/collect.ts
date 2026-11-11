@@ -10,26 +10,27 @@ export interface ReferenceReading extends Reading {
 
 export interface ReferenceChain {
   id: string;
+  /** How often the reference is read; a multiple of the five-minute run. */
+  everyMinutes: number;
   sources: Source<ReferenceReading>[];
 }
 
-/** The references of one currency, read together every `everyMinutes`. */
+/** The references of one currency. */
 export interface ReferenceGroup {
   currency: string;
-  everyMinutes: number;
   chains: ReferenceChain[];
 }
 
 const RUN_EVERY_MINUTES = 5;
 
-/** Whether this run reads the group: on its period, or straight away when it has no values yet. */
-export function groupDue(
-  group: ReferenceGroup,
-  previous: LatestV2 | undefined,
+/** Whether this run reads the reference: on its period, or straight away when it has no value. */
+export function chainDue(
+  chain: ReferenceChain,
+  previous: LatestQuote | undefined,
   now: Date,
 ): boolean {
   const minuteOfDay = now.getUTCHours() * 60 + now.getUTCMinutes();
-  return previous === undefined || minuteOfDay % group.everyMinutes < RUN_EVERY_MINUTES;
+  return previous === undefined || minuteOfDay % chain.everyMinutes < RUN_EVERY_MINUTES;
 }
 
 /**
@@ -48,6 +49,12 @@ export async function collectGroup(
   const references: LatestQuote[] = [];
   for (const chain of group.chains) {
     const last = before.get(chain.id);
+    if (!chainDue(chain, last, now)) {
+      if (last !== undefined) {
+        references.push(last);
+      }
+      continue;
+    }
     const found = await firstPlausible(
       chain.sources,
       last === undefined ? null : parseDecimal(last.value),

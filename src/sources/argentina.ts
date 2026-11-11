@@ -4,7 +4,7 @@ import { localDate } from '../dates';
 import { formatDecimal, parseDecimal } from '../decimal';
 import type { JsonClient } from '../http';
 import type { Source } from '../model';
-import { UTC_OFFSET_HOURS } from '../v2/catalog';
+import { TIME_ZONES } from '../v2/catalog';
 import type { ReferenceReading } from '../v2/collect';
 
 /**
@@ -65,7 +65,7 @@ export class DolarApiArgentina implements Source<ReferenceReading> {
     if (quote === undefined) {
       throw new Error(`${URLS.dolarApiArgentina} has no "${this.house}" quote`);
     }
-    const effectiveDate = localDate(new Date(quote.fechaActualizacion), UTC_OFFSET_HOURS.ARS);
+    const effectiveDate = localDate(new Date(quote.fechaActualizacion), TIME_ZONES.ARS);
     return reading(quote.compra, quote.venta, effectiveDate);
   }
 }
@@ -80,7 +80,7 @@ export class ArgentinaDatosDay implements Source<ReferenceReading> {
   ) {}
 
   async read(): Promise<ReferenceReading> {
-    const today = localDate(this.now(), UTC_OFFSET_HOURS.ARS);
+    const today = localDate(this.now(), TIME_ZONES.ARS);
     const quote = dayQuote.parse(await this.http(ARGENTINA_DATOS_URLS.day(this.house, today)));
     return reading(quote.compra, quote.venta, quote.fecha);
   }

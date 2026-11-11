@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { URLS } from '../config';
-import { caracasDate } from '../dates';
+import { okxP2pUrl } from '../config';
 import { mean, median, parseDecimal, type Decimal } from '../decimal';
 import type { JsonClient } from '../http';
 import type { Source, UsdtReading } from '../model';
@@ -25,13 +24,16 @@ export class OkxP2pUsdt implements Source<UsdtReading> {
 
   constructor(
     private readonly http: JsonClient,
-    private readonly now: () => Date,
+    private readonly currency: string,
+    private readonly today: () => string,
   ) {}
 
   async read(): Promise<UsdtReading> {
-    const [sell, buy] = await Promise.all([this.http(URLS.okxP2pSell), this.http(URLS.okxP2pBuy)]);
+    // One request at a time: OKX answers bursts from shared Cloudflare addresses with HTTP 429.
+    const sell = await this.http(okxP2pUrl(this.currency, 'sell'));
+    const buy = await this.http(okxP2pUrl(this.currency, 'buy'));
     const ask = topMedian(sellBook.parse(sell).data.sell);
     const bid = topMedian(buyBook.parse(buy).data.buy);
-    return { value: mean([ask, bid]), ask, bid, effectiveDate: caracasDate(this.now()) };
+    return { value: mean([ask, bid]), ask, bid, effectiveDate: this.today() };
   }
 }

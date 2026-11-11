@@ -3,7 +3,7 @@ import { localDate, monthOf, previousMonth } from './dates';
 import { KEYS } from './feed';
 import type { LatestDocument, MonthDocument } from './model';
 import type { DocumentStore } from './store';
-import { INDEX, utcOffsetOf } from './v2/catalog';
+import { INDEX, timeZoneOf } from './v2/catalog';
 import { V2_KEYS, type StoredLatest } from './v2/feed';
 import { vesLatest, vesMonth } from './v2/fromV1';
 import { denseMonth, type StoredMonth } from './v2/history';
@@ -61,9 +61,9 @@ async function find(path: string, store: DocumentStore, now: Date): Promise<Foun
       : { body: JSON.stringify(latest), cacheControl: CACHE.latest };
   }
   const [, monthCode, month] = V2_MONTH.exec(path) ?? [];
-  const offset = monthCode === undefined ? undefined : utcOffsetOf(monthCode.toUpperCase());
-  if (monthCode !== undefined && month !== undefined && offset !== undefined) {
-    const today = localDate(now, offset);
+  const timeZone = monthCode === undefined ? undefined : timeZoneOf(monthCode.toUpperCase());
+  if (monthCode !== undefined && month !== undefined && timeZone !== undefined) {
+    const today = localDate(now, timeZone);
     const days = await historyOf(monthCode.toUpperCase(), month, today, store);
     return days === null
       ? null
