@@ -11,6 +11,7 @@ delante; todo dentro del plan gratuito y sin método de pago.
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
 | `v1/latest.json`          | Tasas actuales: BCV dólar y euro (y los del siguiente día hábil, si ya se publicaron), USDT y monedas extra por dólar, cada una con fuente, fecha efectiva y hora de captura | 2 min                                      |
 | `v1/history/AAAA-MM.json` | Cierre de cada día del mes                                                                                                                                                   | 15 min el mes en curso, 1 año los cerrados |
+| `v2/...`                  | Varias referencias por moneda local, con histórico de cada día del calendario: ver [`v2/README.md`](v2/README.md)                                                            | Según la ruta                              |
 
 Se ejecuta cada 5 minutos, porque el USDT cambia a lo largo del día.
 `v1/latest.json` se reescribe en cada ejecución; el mes en curso, una vez por

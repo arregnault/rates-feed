@@ -1,3 +1,4 @@
+import { CACHE } from './cache';
 import { collect, type SourceChains, type Warn } from './collect';
 import { caracasDate, monthOf } from './dates';
 import {
@@ -16,10 +17,6 @@ export const KEYS = {
   month: (month: string) => `v1/history/${month}.json`,
   backfill: 'v1/meta/backfill.json',
 } as const;
-
-const LATEST_CACHE = 'public, max-age=120';
-const OPEN_MONTH_CACHE = 'public, max-age=900';
-const CLOSED_MONTH_CACHE = 'public, max-age=31536000, immutable';
 
 export type BackfillLoader = () => Promise<{ dollars: HistoryPoint[]; euros: HistoryPoint[] }>;
 
@@ -40,7 +37,7 @@ export async function runFeed({
 }: FeedDependencies): Promise<LatestDocument> {
   const previous = await store.read<LatestDocument>(KEYS.latest);
   const { latest, fresh } = await collect(chains, previous, now, warn);
-  await store.write(KEYS.latest, latest, LATEST_CACHE);
+  await store.write(KEYS.latest, latest, CACHE.latest);
 
   const currentMonth = monthOf(caracasDate(now));
   await backfillStep(store, loadBackfill, currentMonth, warn);
@@ -100,7 +97,7 @@ async function backfillStep(
       done: [...months.keys()].every((month) => completed.has(month)),
       completedMonths: [...completed].sort(),
     };
-    await store.write(KEYS.backfill, next, LATEST_CACHE);
+    await store.write(KEYS.backfill, next, CACHE.latest);
   } catch (error) {
     warn(`backfill: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -129,5 +126,5 @@ async function writeMonth(
   if (JSON.stringify(merged) === JSON.stringify(existing)) {
     return;
   }
-  await store.write(key, merged, month < currentMonth ? CLOSED_MONTH_CACHE : OPEN_MONTH_CACHE);
+  await store.write(key, merged, month < currentMonth ? CACHE.closedMonth : CACHE.openMonth);
 }

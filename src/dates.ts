@@ -17,3 +17,18 @@ export function dateOfTimestamp(timestamp: string): string {
   }
   return /(?:[+-]\d{2}:\d{2})$/.test(timestamp) ? match[1] : caracasDate(new Date(timestamp));
 }
+
+export function addDays(date: string, days: number): string {
+  const instant = new Date(`${date}T00:00:00Z`);
+  instant.setUTCDate(instant.getUTCDate() + days);
+  return instant.toISOString().slice(0, 10);
+}
+
+export function previousMonth(month: string): string {
+  return monthOf(addDays(`${month}-01`, -1));
+}
+
+export function lastDayOf(month: string): string {
+  const nextMonth = monthOf(addDays(`${month}-28`, 4));
+  return addDays(`${nextMonth}-01`, -1);
+}
