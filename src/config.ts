@@ -50,3 +50,22 @@ export const ARGENTINA_DATOS_URLS = {
   day: (house: string, date: string) => `${ARGENTINA_DATOS}/${house}/${date.replaceAll('-', '/')}`,
   history: (house: string) => `${ARGENTINA_DATOS}/${house}`,
 };
+
+export const OFFICIAL_URLS = {
+  trm: (from: string) =>
+    `https://www.datos.gov.co/resource/32sa-8pi3.json?$where=vigenciadesde>='${from}'&$order=vigenciadesde ASC&$limit=5000`,
+  mindicadorDollar: 'https://mindicador.cl/api/dolar',
+  mindicadorYear: (year: number) => `https://mindicador.cl/api/dolar/${year}`,
+  ptax: (from: string, to: string) =>
+    `https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarPeriodo(dataInicial=@i,dataFinalCotacao=@f)?@i='${usDate(from)}'&@f='${usDate(to)}'&$format=json`,
+  bcrpSbs: (from: string, to: string) =>
+    `https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PD04640PD/json/${from}/${to}`,
+  dolarApiMexico: 'https://mx.dolarapi.com/v1/cotizaciones',
+  currencyApiOn: (date: string) =>
+    `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${date}/v1/currencies/usd.json`,
+};
+
+/** MM-DD-YYYY, the date format of the Banco Central do Brasil API. */
+function usDate(date: string): string {
+  return `${date.slice(5, 7)}-${date.slice(8, 10)}-${date.slice(0, 4)}`;
+}

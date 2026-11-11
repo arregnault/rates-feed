@@ -49,22 +49,27 @@ En Argentina `value` es el precio de venta (el que se suele citar) y, cuando
 la fuente lo da, `bid` es el de compra y `ask` el de venta. Las casas se actualizan una
 vez por hora. El histórico guarda el valor de venta de cada día.
 
-**Otras monedas con USDT P2P**
+**Otras monedas**
 
-| Moneda | Nombre              | Zona                    | Id             |
-| ------ | ------------------- | ----------------------- | -------------- |
-| BRL    | Real brasileño      | `America/Sao_Paulo`     | `brl.usdt_p2p` |
-| CLP    | Peso chileno        | `America/Santiago`      | `clp.usdt_p2p` |
-| COP    | Peso colombiano     | `America/Bogota`        | `cop.usdt_p2p` |
-| CRC    | Colón costarricense | `America/Costa_Rica`    | `crc.usdt_p2p` |
-| DOP    | Peso dominicano     | `America/Santo_Domingo` | `dop.usdt_p2p` |
-| MXN    | Peso mexicano       | `America/Mexico_City`   | `mxn.usdt_p2p` |
-| PEN    | Sol peruano         | `America/Lima`          | `pen.usdt_p2p` |
-| PYG    | Guaraní             | `America/Asuncion`      | `pyg.usdt_p2p` |
-| UYU    | Peso uruguayo       | `America/Montevideo`    | `uyu.usdt_p2p` |
+Cada una tiene una referencia local (la oficial donde hay una fuente con
+histórico, o una de mercado) y su USDT P2P (`{moneda}.usdt_p2p`).
 
-El USDT P2P de estas monedas (y `ars.usdt_p2p`) se lee cada 15 minutos y tiene
-histórico desde 2026-11-11, cuando el feed empezó a capturarlo.
+| Moneda | Nombre              | Zona                    | Referencia local | Tipo       | Fuente                                 | Histórico desde |
+| ------ | ------------------- | ----------------------- | ---------------- | ---------- | -------------------------------------- | --------------- |
+| BRL    | Real brasileño      | `America/Sao_Paulo`     | `brl.ptax`       | `official` | PTAX de venta, Banco Central do Brasil | 2023-01-01      |
+| CLP    | Peso chileno        | `America/Santiago`      | `clp.observed`   | `official` | Dólar observado (mindicador.cl)        | 2023-01-01      |
+| COP    | Peso colombiano     | `America/Bogota`        | `cop.trm`        | `official` | TRM (datos.gov.co)                     | 2023-01-01      |
+| MXN    | Peso mexicano       | `America/Mexico_City`   | `mxn.fix`        | `official` | FIX (mx.dolarapi.com)                  | 2026-11-11      |
+| PEN    | Sol peruano         | `America/Lima`          | `pen.sbs`        | `official` | Tipo de cambio SBS de venta (BCRP)     | 2023-01-01      |
+| CRC    | Colón costarricense | `America/Costa_Rica`    | `crc.market`     | `market`   | currency-api                           | 2024-03-02      |
+| DOP    | Peso dominicano     | `America/Santo_Domingo` | `dop.market`     | `market`   | currency-api                           | 2024-03-02      |
+| PYG    | Guaraní             | `America/Asuncion`      | `pyg.market`     | `market`   | currency-api                           | 2024-03-02      |
+| UYU    | Peso uruguayo       | `America/Montevideo`    | `uyu.market`     | `market`   | currency-api                           | 2024-03-02      |
+
+Las referencias locales se leen una vez por hora; la TRM y el dólar observado
+se publican la víspera, y cuentan desde el día en que rigen. El USDT P2P de
+estas monedas (y `ars.usdt_p2p`) se lee cada 15 minutos y tiene histórico
+desde 2026-11-11, cuando el feed empezó a capturarlo.
 
 Cada valor es cuántas unidades de la moneda local vale una unidad de la base:
 `ves.bcv` = 899,27 significa 1 USD = 899,27 VES. Los valores son texto con

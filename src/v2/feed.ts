@@ -26,10 +26,13 @@ export interface StoredLatest {
   cooldowns?: Record<string, string>;
 }
 
-/** One piece of past history, loaded in a run of its own to stay within the CPU limit. */
+/**
+ * One piece of past history, loaded in a run of its own to stay within the CPU limit. It may
+ * fill several currencies when one source answers for all of them.
+ */
 export interface BackfillTask {
   key: string;
-  load: () => Promise<SparseDays>;
+  load: () => Promise<Record<string, SparseDays>>;
 }
 
 export interface CurrencyFeed {
@@ -110,14 +113,12 @@ async function backfillStep(
     return;
   }
   try {
-    const currentMonth = monthOf(localDate(now, pending.feed.timeZone));
-    await writeDays(
-      store,
-      pending.feed.group.currency,
-      await pending.task.load(),
-      currentMonth,
-      true,
-    );
+    for (const [currency, days] of Object.entries(await pending.task.load())) {
+      const timeZone =
+        currencies.find((feed) => feed.group.currency === currency)?.timeZone ??
+        pending.feed.timeZone;
+      await writeDays(store, currency, days, monthOf(localDate(now, timeZone)), true);
+    }
     await store.write(
       V2_KEYS.backfill,
       { done: [...state.done, pending.task.key].sort() },

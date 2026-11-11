@@ -268,8 +268,10 @@ describe('v2 feed run', () => {
     const task = (key: string, value: string) => ({
       key,
       load: async () => ({
-        '2026-11-10': { 'ars.blue': { value, source: 'argentinadatos' } },
-        '2026-10-30': { 'ars.blue': { value, source: 'argentinadatos' } },
+        ARS: {
+          '2026-11-10': { 'ars.blue': { value, source: 'argentinadatos' } },
+          '2026-10-30': { 'ars.blue': { value, source: 'argentinadatos' } },
+        },
       }),
     });
     const currencies = [

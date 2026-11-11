@@ -8,7 +8,7 @@ import {
 } from '../sources/argentina';
 import { HISTORY_FROM, REFERENCE_IDS, TIME_ZONES } from './catalog';
 import type { CurrencyFeed } from './feed';
-import type { SparseDays } from './history';
+import { sparseOf } from './history';
 
 const ID_BY_HOUSE: Record<ArgentinaHouse, string> = {
   oficial: REFERENCE_IDS.arsOfficial,
@@ -36,13 +36,13 @@ export function argentinaFeed(http: JsonClient, now: () => Date): CurrencyFeed {
     },
     backfill: ARGENTINA_HOUSES.map((house) => ({
       key: `ars:${house}`,
-      load: async (): Promise<SparseDays> => {
-        const days: SparseDays = {};
-        for (const { date, value } of await readArgentinaDatosHistory(http, house, HISTORY_FROM)) {
-          days[date] = { [ID_BY_HOUSE[house]]: { value, source: 'argentinadatos' } };
-        }
-        return days;
-      },
+      load: async () => ({
+        ARS: sparseOf(
+          await readArgentinaDatosHistory(http, house, HISTORY_FROM),
+          ID_BY_HOUSE[house],
+          'argentinadatos',
+        ),
+      }),
     })),
   };
 }

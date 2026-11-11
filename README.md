@@ -42,18 +42,23 @@ y alguien en el camino podría alterarla, solo se acepta si está a menos de un
 
 ## Fuentes
 
-| Dato          | Orden                                                                                                                                             |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| BCV dólar     | bcv.org.ve (con su fecha valor), ve.dolarapi.com, open.er-api.com                                                                                 |
-| BCV euro      | bcv.org.ve, ve.dolarapi.com, cruce aproximado de open.er-api.com (no entra al histórico)                                                          |
-| USDT          | Bybit P2P, OKX P2P (en ambos, promedio de la mediana de los primeros 10 anuncios de compra y de venta), api.yadio.io, paralelo de ve.dolarapi.com |
-| Monedas extra | currency-api (jsDelivr), open.er-api.com, api.yadio.io                                                                                            |
-| Argentina     | dolarapi.com (las siete casas en una petición, una vez por hora), ArgentinaDatos (el día de hoy)                                                  |
-| USDT P2P (v2) | Bybit P2P, OKX P2P (solo OKX en CRC), cada 15 minutos: ARS, BRL, CLP, COP, CRC, DOP, MXN, PEN, PYG y UYU                                          |
+| Dato           | Orden                                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| BCV dólar      | bcv.org.ve (con su fecha valor), ve.dolarapi.com, open.er-api.com                                                                                      |
+| BCV euro       | bcv.org.ve, ve.dolarapi.com, cruce aproximado de open.er-api.com (no entra al histórico)                                                               |
+| USDT           | Bybit P2P, OKX P2P (en ambos, promedio de la mediana de los primeros 10 anuncios de compra y de venta), api.yadio.io, paralelo de ve.dolarapi.com      |
+| Monedas extra  | currency-api (jsDelivr), open.er-api.com, api.yadio.io                                                                                                 |
+| Argentina      | dolarapi.com (las siete casas en una petición, una vez por hora), ArgentinaDatos (el día de hoy)                                                       |
+| USDT P2P (v2)  | Bybit P2P, OKX P2P (solo OKX en CRC), cada 15 minutos: ARS, BRL, CLP, COP, CRC, DOP, MXN, PEN, PYG y UYU                                               |
+| Oficiales (v2) | Una vez por hora: PTAX (olinda.bcb.gov.br), dólar observado (mindicador.cl), TRM (datos.gov.co), SBS (estadisticas.bcrp.gob.pe), FIX (mx.dolarapi.com) |
+| Mercado (v2)   | currency-api, una vez por hora: CRC, DOP, PYG y UYU                                                                                                    |
 
 El histórico del BCV desde 2023 sale de ve.dolarapi.com y se carga en tandas de
 12 meses por ejecución, para no superar el límite de CPU del plan gratuito. El
-de Argentina desde 2023 sale de ArgentinaDatos, una casa por ejecución.
+de Argentina desde 2023 sale de ArgentinaDatos, una casa por ejecución; el de
+las tasas oficiales desde 2023, de cada fuente (Chile, un año por ejecución), y
+el de las de mercado desde 2024-03-02, de currency-api, cinco días por
+ejecución.
 
 Las monedas de `v2/` que no salen de `v1/` guardan su estado actual en
 `v2/meta/latest.json` (se reescribe solo cuando cambia) y su histórico en un
@@ -67,7 +72,7 @@ todas ellas es un solo documento, y reescribirlo en cada ejecución gastaría la
 mayor parte de la cuota diaria de escrituras. El bolívar sigue cada 5 minutos
 en `v1/`. Si OKX responde HTTP 429 (lo hace a veces con las direcciones de
 Cloudflare, que comparten muchos Workers), se deja de consultar 15 minutos; y
-cada ejecución lee como mucho 5 respaldos, para no pasar de las 50 peticiones
+cada ejecución lee como mucho 4 respaldos, para no pasar de las 50 peticiones
 externas por ejecución del plan gratuito.
 
 dolarapi.com pide citar el servicio en toda publicación que use sus datos
@@ -107,7 +112,7 @@ curl https://rates.apparus.app/v1/latest.json
 | ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Peticiones al Worker    | 100.000       | Las de quien consuma el feed, más 288 ejecuciones programadas                                                                                                                         |
 | Lecturas de KV          | 100.000       | Pocas: la caché de Cloudflare responde las peticiones repetidas, por ruta                                                                                                             |
-| Escrituras en KV        | 1.000         | Unas 430: `v1/latest.json` en cada ejecución, el estado de `v2/` cada 15 minutos y los meses una vez por hora. La carga inicial del histórico de Argentina sumó unas 330 una sola vez |
+| Escrituras en KV        | 1.000         | Unas 430: `v1/latest.json` en cada ejecución, el estado de `v2/` cada 15 minutos y los meses una vez por hora. La carga inicial del histórico suma unas 300 más, repartidas en un día |
 | Eventos de Workers Logs | 200.000       | Unos pocos miles: una ejecución y sus avisos cada 5 minutos, más las peticiones                                                                                                       |
 
 Al superar un límite, el servicio deja de responder hasta el día siguiente; no

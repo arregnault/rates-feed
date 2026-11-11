@@ -110,8 +110,12 @@ describe('currency feeds', () => {
   });
 
   it('reads P2P every 15 minutes, with OKX alone where Bybit has no ads', () => {
-    const colon = feeds.find((feed) => feed.group.currency === 'CRC')?.group.chains[0];
-    const peso = feeds.find((feed) => feed.group.currency === 'COP')?.group.chains[0];
+    const p2p = (currency: string) =>
+      feeds
+        .find((feed) => feed.group.currency === currency)
+        ?.group.chains.find((chain) => chain.id.endsWith('.usdt_p2p'));
+    const colon = p2p('CRC');
+    const peso = p2p('COP');
 
     expect(colon?.everyMinutes).toBe(15);
     expect(colon?.sources.map((s) => s.name)).toEqual(['okx-p2p']);
