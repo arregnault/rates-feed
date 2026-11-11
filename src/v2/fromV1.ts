@@ -1,7 +1,7 @@
-import { addDays, lastDayOf } from '../dates';
 import type { DayRates, LatestDocument, MonthDocument, PublishedQuote } from '../model';
 import { REFERENCE_IDS } from './catalog';
-import type { LatestQuote, LatestV2, MonthV2, Quote } from './model';
+import { denseMonth, type DayValue, type SparseDays } from './history';
+import type { LatestQuote, LatestV2, MonthV2 } from './model';
 
 /** The bolivar references, read from the documents the v1 feed already keeps. */
 export function vesLatest(document: LatestDocument): LatestV2 {
@@ -34,57 +34,41 @@ function latestQuote(id: string, quote: PublishedQuote, next?: PublishedQuote | 
   };
 }
 
-type Carried = Record<string, Quote>;
-
-/**
- * Every day of `month` up to `today`, each reference with the value in force: on a day its
- * source did not publish (a weekend, a holiday), the last value published before it.
- */
+/** The bolivar history in the v2 shape, from the v1 month documents. */
 export function vesMonth(
   month: string,
   document: MonthDocument | null,
   before: MonthDocument | null,
   today: string,
 ): MonthV2 | null {
-  const first = `${month}-01`;
-  if (document === null || today < first) {
-    return null;
-  }
-  const last = lastDayOf(month) < today ? lastDayOf(month) : today;
-  let carried = lastValues(before);
-  const days: MonthV2['days'] = {};
-  for (let day = first; day <= last; day = addDays(day, 1)) {
-    const published = document.days[day];
-    carried = published === undefined ? carried : { ...carried, ...quotesOf(day, published) };
-    if (Object.keys(carried).length > 0) {
-      days[day] = carried;
-    }
-  }
-  return { schemaVersion: 2, currency: 'VES', month, days };
+  return denseMonth(
+    'VES',
+    month,
+    document === null ? undefined : sparseOf(document),
+    before === null ? undefined : sparseOf(before),
+    today,
+  );
 }
 
-function lastValues(document: MonthDocument | null): Carried {
-  let carried: Carried = {};
-  for (const day of Object.keys(document?.days ?? {}).sort()) {
-    carried = { ...carried, ...quotesOf(day, document?.days[day] ?? {}) };
-  }
-  return carried;
+function sparseOf(document: MonthDocument): SparseDays {
+  return Object.fromEntries(
+    Object.entries(document.days).map(([day, rates]) => [day, valuesOf(rates)]),
+  );
 }
 
-function quotesOf(day: string, rates: DayRates): Carried {
-  const quotes: Carried = {};
+function valuesOf(rates: DayRates): Record<string, DayValue> {
+  const values: Record<string, DayValue> = {};
   if (rates.bcvUsd !== undefined) {
-    quotes[REFERENCE_IDS.vesBcv] = { value: rates.bcvUsd, since: day };
+    values[REFERENCE_IDS.vesBcv] = { value: rates.bcvUsd };
   }
   if (rates.bcvEur !== undefined) {
-    quotes[REFERENCE_IDS.vesBcvEur] = { value: rates.bcvEur, since: day };
+    values[REFERENCE_IDS.vesBcvEur] = { value: rates.bcvEur };
   }
   if (rates.usdt !== undefined) {
-    quotes[REFERENCE_IDS.vesUsdtP2p] = {
+    values[REFERENCE_IDS.vesUsdtP2p] = {
       value: rates.usdt,
-      since: day,
       ...(rates.usdtSource === undefined ? {} : { source: rates.usdtSource }),
     };
   }
-  return quotes;
+  return values;
 }

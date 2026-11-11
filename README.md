@@ -48,9 +48,23 @@ y alguien en el camino podría alterarla, solo se acepta si está a menos de un
 | BCV euro      | bcv.org.ve, ve.dolarapi.com, cruce aproximado de open.er-api.com (no entra al histórico)                                                          |
 | USDT          | Bybit P2P, OKX P2P (en ambos, promedio de la mediana de los primeros 10 anuncios de compra y de venta), api.yadio.io, paralelo de ve.dolarapi.com |
 | Monedas extra | currency-api (jsDelivr), open.er-api.com, api.yadio.io                                                                                            |
+| Argentina     | dolarapi.com (las siete casas en una petición, una vez por hora), ArgentinaDatos (el día de hoy)                                                  |
 
 El histórico del BCV desde 2023 sale de ve.dolarapi.com y se carga en tandas de
-12 meses por ejecución, para no superar el límite de CPU del plan gratuito.
+12 meses por ejecución, para no superar el límite de CPU del plan gratuito. El
+de Argentina desde 2023 sale de ArgentinaDatos, una casa por ejecución.
+
+Las monedas de `v2/` que no salen de `v1/` guardan su estado actual en
+`v2/meta/latest.json` (se reescribe solo cuando cambia) y su histórico en un
+documento por mes para todas ellas, `v2/meta/history/AAAA-MM.json`, que se
+escribe una vez por hora y en la última ejecución del día de cada moneda.
+Ninguno de los dos se publica tal cual: las rutas de `v2/` los recortan por
+moneda.
+
+dolarapi.com pide citar el servicio en toda publicación que use sus datos
+(«DolarApi https://dolarapi.com») y sugiere no consultarlo más de una vez
+cada pocas horas por serie; las casas de Argentina se leen juntas una vez por
+hora.
 
 ## Desarrollo
 
@@ -80,12 +94,12 @@ curl https://rates.apparus.app/v1/latest.json
 
 ## Límites del plan gratuito
 
-| Recurso                 | Límite diario | Uso previsto                                                                    |
-| ----------------------- | ------------- | ------------------------------------------------------------------------------- |
-| Peticiones al Worker    | 100.000       | Las de quien consuma el feed, más 288 ejecuciones programadas                   |
-| Lecturas de KV          | 100.000       | Pocas: la caché de Cloudflare responde las peticiones repetidas, por ruta       |
-| Escrituras en KV        | 1.000         | Unas 600: `latest.json` en cada ejecución y el mes solo cuando cambia           |
-| Eventos de Workers Logs | 200.000       | Unos pocos miles: una ejecución y sus avisos cada 5 minutos, más las peticiones |
+| Recurso                 | Límite diario | Uso previsto                                                                                                                                                                         |
+| ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Peticiones al Worker    | 100.000       | Las de quien consuma el feed, más 288 ejecuciones programadas                                                                                                                        |
+| Lecturas de KV          | 100.000       | Pocas: la caché de Cloudflare responde las peticiones repetidas, por ruta                                                                                                            |
+| Escrituras en KV        | 1.000         | Unas 360: `v1/latest.json` en cada ejecución, el mes de `v1/` y el estado y el mes de `v2/` una vez por hora. La carga inicial del histórico de Argentina suma unas 330 una sola vez |
+| Eventos de Workers Logs | 200.000       | Unos pocos miles: una ejecución y sus avisos cada 5 minutos, más las peticiones                                                                                                      |
 
 Al superar un límite, el servicio deja de responder hasta el día siguiente; no
 genera cargos.

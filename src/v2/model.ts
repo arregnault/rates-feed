@@ -15,6 +15,8 @@ export interface Reference {
 export interface Currency {
   code: string;
   name: string;
+  /** The zone dates are read in: `since` and the days of the history. */
+  timeZone: string;
   references: Reference[];
 }
 

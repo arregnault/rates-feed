@@ -1,8 +1,11 @@
-/** Venezuela has used UTC-4 year-round since 2016. */
-const CARACAS_OFFSET_MS = -4 * 60 * 60 * 1000;
+/** Calendar date at a fixed offset from UTC, for zones without daylight saving time. */
+export function localDate(instant: Date, utcOffsetHours: number): string {
+  return new Date(instant.getTime() + utcOffsetHours * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
 
+/** Venezuela has used UTC-4 year-round since 2016. */
 export function caracasDate(instant: Date): string {
-  return new Date(instant.getTime() + CARACAS_OFFSET_MS).toISOString().slice(0, 10);
+  return localDate(instant, -4);
 }
 
 export function monthOf(date: string): string {

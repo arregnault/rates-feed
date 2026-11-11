@@ -29,6 +29,7 @@ export const URLS = {
   bcvSecure: 'https://www.bcv.org.ve/',
   bcvPlain: 'http://www.bcv.org.ve/',
   dolarApiDollars: 'https://ve.dolarapi.com/v1/dolares',
+  dolarApiArgentina: 'https://dolarapi.com/v1/dolares',
   dolarApiEuros: 'https://ve.dolarapi.com/v1/euros',
   dolarApiDollarHistory: 'https://ve.dolarapi.com/v1/historicos/dolares',
   dolarApiEuroHistory: 'https://ve.dolarapi.com/v1/historicos/euros',
@@ -42,3 +43,10 @@ export const URLS = {
   currencyApi:
     'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
 } as const;
+
+const ARGENTINA_DATOS = 'https://api.argentinadatos.com/v1/cotizaciones/dolares';
+
+export const ARGENTINA_DATOS_URLS = {
+  day: (house: string, date: string) => `${ARGENTINA_DATOS}/${house}/${date.replaceAll('-', '/')}`,
+  history: (house: string) => `${ARGENTINA_DATOS}/${house}`,
+};

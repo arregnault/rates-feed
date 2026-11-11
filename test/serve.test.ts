@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { KEYS } from '../src/feed';
+import { V2_KEYS } from '../src/v2/feed';
 import { cacheKey, serve } from '../src/serve';
 import type { IndexDocument, MonthV2 } from '../src/v2/model';
 import { MemoryStore } from './support';
@@ -133,5 +134,63 @@ describe('serve v2', () => {
     expect((await serve(request('/v2/xyz/latest.json'), store, NOW)).status).toBe(404);
     expect((await serve(request('/v2/ves/history/2020-01.json'), store, NOW)).status).toBe(404);
     expect((await serve(request('/v2/ves/latest.json'), new MemoryStore(), NOW)).status).toBe(404);
+  });
+});
+
+describe('serve v2 for currencies collected in v2', () => {
+  async function storeWithArgentina(): Promise<MemoryStore> {
+    const store = new MemoryStore();
+    await store.write(
+      V2_KEYS.latest,
+      {
+        schemaVersion: 2,
+        currencies: {
+          ARS: { schemaVersion: 2, currency: 'ARS', updatedAt: 'x', references: [] },
+        },
+      },
+      'public, max-age=120',
+    );
+    await store.write(
+      V2_KEYS.month('2026-11'),
+      {
+        schemaVersion: 2,
+        month: '2026-11',
+        currencies: {
+          ARS: { '2026-11-08': { 'ars.blue': { value: '1555', source: 'dolarapi' } } },
+        },
+      },
+      'public, max-age=900',
+    );
+    return store;
+  }
+
+  it('serves the latest of a currency', async () => {
+    const response = await serve(request('/v2/ars/latest.json'), await storeWithArgentina(), NOW);
+
+    expect(await response.json()).toMatchObject({ currency: 'ARS' });
+  });
+
+  it('serves its month up to today in its own zone', async () => {
+    const lateEvening = new Date('2026-11-11T02:30:00Z');
+    const response = await serve(
+      request('/v2/ars/history/2026-11.json'),
+      await storeWithArgentina(),
+      lateEvening,
+    );
+    const body = (await response.json()) as MonthV2;
+
+    expect(Object.keys(body.days)).toEqual(['2026-11-08', '2026-11-09', '2026-11-10']);
+    expect(body.days['2026-11-10']?.['ars.blue']).toEqual({
+      value: '1555',
+      since: '2026-11-08',
+      source: 'dolarapi',
+    });
+  });
+
+  it('answers 404 for a currency without data', async () => {
+    const store = await storeWithArgentina();
+
+    expect((await serve(request('/v2/bob/latest.json'), store, NOW)).status).toBe(404);
+    expect((await serve(request('/v2/bob/history/2026-11.json'), store, NOW)).status).toBe(404);
   });
 });
