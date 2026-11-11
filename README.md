@@ -49,8 +49,9 @@ y alguien en el camino podría alterarla, solo se acepta si está a menos de un
 | USDT           | Bybit P2P, OKX P2P (en ambos, promedio de la mediana de los primeros 10 anuncios de compra y de venta), api.yadio.io, paralelo de ve.dolarapi.com      |
 | Monedas extra  | currency-api (jsDelivr), open.er-api.com, api.yadio.io                                                                                                 |
 | Argentina      | dolarapi.com (las siete casas en una petición, una vez por hora), ArgentinaDatos (el día de hoy)                                                       |
-| USDT P2P (v2)  | Bybit P2P, OKX P2P (solo OKX en CRC), cada 15 minutos: ARS, BRL, CLP, COP, CRC, DOP, MXN, PEN, PYG y UYU                                               |
+| USDT P2P (v2)  | Bybit P2P, OKX P2P (solo OKX en CRC), cada 15 minutos: ARS, BOB, BRL, CLP, COP, CRC, DOP, MXN, PEN, PYG y UYU                                          |
 | Oficiales (v2) | Una vez por hora: PTAX (olinda.bcb.gov.br), dólar observado (mindicador.cl), TRM (datos.gov.co), SBS (estadisticas.bcrp.gob.pe), FIX (mx.dolarapi.com) |
+| Bolivia (v2)   | Oficial (TCO) de bo.dolarapi.com una vez por hora, currency-api de respaldo                                                                            |
 | Mercado (v2)   | currency-api, una vez por hora: CRC, DOP, PYG y UYU                                                                                                    |
 
 El histórico del BCV desde 2023 sale de ve.dolarapi.com y se carga en tandas de
@@ -58,7 +59,11 @@ El histórico del BCV desde 2023 sale de ve.dolarapi.com y se carga en tandas de
 de Argentina desde 2023 sale de ArgentinaDatos, una casa por ejecución; el de
 las tasas oficiales desde 2023, de cada fuente (Chile, un año por ejecución), y
 el de las de mercado desde 2024-03-02, de currency-api, cinco días por
-ejecución.
+ejecución. El oficial de Bolivia fue fijo (6,96) hasta el 2026-06-28; desde el
+2026-06-29 el Banco Central de Bolivia lo publica a diario, pero su sitio no
+responde a los Workers, así que esos valores hasta el 2026-11-10 están
+guardados en `src/v2/data/bob-official.json` y desde entonces los registra el
+feed.
 
 Las monedas de `v2/` que no salen de `v1/` guardan su estado actual en
 `v2/meta/latest.json` (se reescribe solo cuando cambia) y su histórico en un

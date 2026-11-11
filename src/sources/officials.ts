@@ -179,6 +179,29 @@ export class DolarApiMexicoFix implements Source<ReferenceReading> {
   }
 }
 
+const boliviaQuote = z.object({
+  venta: z.number().positive(),
+  fechaActualizacion: z.string().regex(/^\d{4}-\d{2}-\d{2}T/),
+});
+
+/**
+ * Bolivia's official rate (TCO) as the Banco Central de Bolivia publishes it, which does not
+ * answer requests from Workers. The timestamp is the date at UTC midnight.
+ */
+export class DolarApiBoliviaOfficial implements Source<ReferenceReading> {
+  readonly name = 'dolarapi';
+
+  constructor(private readonly http: JsonClient) {}
+
+  async read(): Promise<ReferenceReading> {
+    const quote = boliviaQuote.parse(await this.http(OFFICIAL_URLS.dolarApiBolivia));
+    return {
+      value: parseDecimal(quote.venta),
+      effectiveDate: quote.fechaActualizacion.slice(0, 10),
+    };
+  }
+}
+
 const currencyApiDay = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   usd: z.record(z.string(), z.number()),

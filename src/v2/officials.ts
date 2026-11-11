@@ -6,6 +6,7 @@ import {
   BcrpSbs,
   CurrencyApiMarket,
   DatosGovCoTrm,
+  DolarApiBoliviaOfficial,
   DolarApiMexicoFix,
   MindicadorDollar,
   readBcrp,
@@ -26,6 +27,7 @@ import {
 } from './catalog';
 import type { ReferenceChain } from './collect';
 import type { BackfillTask } from './feed';
+import bolivianOfficial from './data/bob-official.json';
 import { sparseOf, type SparseDays } from './history';
 
 /** Official and market rates change once a day at most. */
@@ -45,6 +47,12 @@ export function localChain(http: JsonClient, code: LocalCode, now: Date): Refere
     sources: [source],
   });
   switch (code) {
+    case 'BOB':
+      return {
+        id: OFFICIAL_REFERENCES.BOB.id,
+        everyMinutes: OFFICIAL_EVERY_MINUTES,
+        sources: [new DolarApiBoliviaOfficial(http), new CurrencyApiMarket(http, code)],
+      };
     case 'BRL':
       return official(OFFICIAL_REFERENCES.BRL.id, new BcbPtax(http, today));
     case 'CLP':
@@ -84,6 +92,12 @@ export function localBackfill(http: JsonClient, code: LocalCode, now: Date): Bac
       return [
         task('cop:trm', code, OFFICIAL_REFERENCES.COP.id, 'datos-gov-co', () =>
           readTrm(http, HISTORY_FROM),
+        ),
+      ];
+    case 'BOB':
+      return [
+        task('bob:official', code, OFFICIAL_REFERENCES.BOB.id, 'bcb', async () =>
+          bolivianHistory(),
         ),
       ];
     case 'BRL':
@@ -160,4 +174,25 @@ async function loadMarketDays(
     }
   }
   return byCurrency;
+}
+
+/** The official rate was fixed at 6.96 per dollar until the BCB let it float on 2026-06-29. */
+const BOLIVIAN_FIXED = { value: '6.96', until: '2026-06-28' } as const;
+
+/**
+ * The fixed rate on every weekday, then the daily rates the BCB published, recorded once in
+ * `data/bob-official.json` because its site does not answer Workers.
+ */
+function bolivianHistory(): DatedValue[] {
+  const fixed: DatedValue[] = [];
+  for (let date = HISTORY_FROM; date <= BOLIVIAN_FIXED.until; date = addDays(date, 1)) {
+    const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
+    if (weekday !== 0 && weekday !== 6) {
+      fixed.push({ date, value: BOLIVIAN_FIXED.value });
+    }
+  }
+  const floating = Object.entries(bolivianOfficial as Record<string, string>).map(
+    ([date, value]) => ({ date, value }),
+  );
+  return [...fixed, ...floating];
 }
