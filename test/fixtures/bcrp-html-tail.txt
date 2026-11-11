@@ -1,0 +1,49 @@
+{
+"config":
+{
+"title":"Tipo de cambio",
+"series":
+[
+{
+"name":"Tipo de cambio - TC Sistema bancario SBS (S/ por US$) - Venta",
+"dec":"3"
+}]
+},
+"periods":
+[
+{
+"name":"02.Nov.26",
+"values":["3.466"]
+},
+{
+"name":"03.Nov.26",
+"values":["3.466"]
+},
+{
+"name":"04.Nov.26",
+"values":["3.452"]
+},
+{
+"name":"05.Nov.26",
+"values":["3.452"]
+},
+{
+"name":"06.Nov.26",
+"values":["3.433"]
+},
+{
+"name":"09.Nov.26",
+"values":["3.418"]
+},
+{
+"name":"10.Nov.26",
+"values":["n.d."]
+},
+{
+"name":"11.Nov.26",
+"values":["n.d."]
+}
+]
+}<br />
+<font size='1'><table class='xdebug-error xe-notice' dir='ltr' border='1' cellspacing='0' cellpadding='1'>
+<tr><th align='left' bgcolor='#f57900' colspan="5"><span style='background-colo

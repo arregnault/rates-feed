@@ -9,6 +9,22 @@ export class HttpError extends Error {
   }
 }
 
+/**
+ * Some servers append an HTML warning after the JSON body (a PHP notice, for one); the JSON before
+ * it is still the answer.
+ */
+export function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    const htmlStart = text.search(/<[a-z!]/i);
+    if (htmlStart <= 0) {
+      throw error;
+    }
+    return JSON.parse(text.slice(0, htmlStart));
+  }
+}
+
 export type JsonClient = (url: string, init?: RequestInit) => Promise<unknown>;
 
 /**
@@ -28,7 +44,7 @@ export function createJsonClient(fetcher: typeof fetch = fetch): JsonClient {
       if (!response.ok) {
         throw new HttpError(url, response.status);
       }
-      return response.json();
+      return parseJson(await response.text());
     };
 
     if (init?.method !== undefined && init.method !== 'GET') {
