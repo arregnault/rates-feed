@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createJsonClient } from '../src/http';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createJsonClient, parseJson } from '../src/http';
 
 function countingFetch(status = 200): { fetcher: typeof fetch; calls: () => number } {
   let calls = 0;
@@ -35,5 +38,20 @@ describe('createJsonClient', () => {
     const http = createJsonClient(countingFetch(502).fetcher);
 
     await expect(http('https://example.test/a')).rejects.toThrow('answered HTTP 502');
+  });
+});
+
+describe('parseJson', () => {
+  it('ignores an HTML warning after the JSON body', () => {
+    const text = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'bcrp-html-tail.txt'),
+      'utf8',
+    );
+
+    expect(parseJson(text)).toMatchObject({ config: { title: 'Tipo de cambio' } });
+  });
+
+  it('rejects a body that is not JSON', () => {
+    expect(() => parseJson('<html>down</html>')).toThrow();
   });
 });
