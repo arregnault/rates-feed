@@ -28,7 +28,7 @@ export default {
     if (cached !== undefined) {
       return request.method === 'HEAD' ? new Response(null, cached) : cached;
     }
-    const response = await serve(request, new KvDocumentStore(env.RATES));
+    const response = await serve(request, new KvDocumentStore(env.RATES), new Date());
     if (key !== null && response.ok && request.method === 'GET') {
       context.waitUntil(cache.put(key, response.clone()));
     }
