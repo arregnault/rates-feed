@@ -168,14 +168,17 @@ const P2P_REFERENCE = (currency: CurrencyCode): Reference => ({
   historyFrom: P2P_HISTORY_FROM,
 });
 
-/** The official rate of each currency that has one source for it, with history where it has. */
+/**
+ * The official rate of each currency that has one source for it. Its history loads from
+ * HISTORY_FROM, but starts on the first day the source published, after the new year holiday.
+ */
 export const OFFICIAL_REFERENCES = {
-  BOB: { id: 'bob.official', name: 'Dólar oficial', historyFrom: HISTORY_FROM },
-  BRL: { id: 'brl.ptax', name: 'Dólar PTAX', historyFrom: HISTORY_FROM },
-  CLP: { id: 'clp.observed', name: 'Dólar observado', historyFrom: HISTORY_FROM },
-  COP: { id: 'cop.trm', name: 'TRM', historyFrom: HISTORY_FROM },
+  BOB: { id: 'bob.official', name: 'Dólar oficial', historyFrom: '2023-01-02' },
+  BRL: { id: 'brl.ptax', name: 'Dólar PTAX', historyFrom: '2023-01-02' },
+  CLP: { id: 'clp.observed', name: 'Dólar observado', historyFrom: '2023-01-03' },
+  COP: { id: 'cop.trm', name: 'TRM', historyFrom: '2023-01-04' },
   MXN: { id: 'mxn.fix', name: 'Dólar FIX', historyFrom: P2P_HISTORY_FROM },
-  PEN: { id: 'pen.sbs', name: 'Dólar SBS', historyFrom: HISTORY_FROM },
+  PEN: { id: 'pen.sbs', name: 'Dólar SBS', historyFrom: '2023-01-03' },
 } as const satisfies Partial<Record<CurrencyCode, Omit<Reference, 'kind' | 'base'>>>;
 
 /** Currencies without one official source: a market rate stands in. */

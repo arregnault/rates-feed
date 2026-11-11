@@ -56,12 +56,12 @@ histórico, o una de mercado) y su USDT P2P (`{moneda}.usdt_p2p`).
 
 | Moneda | Nombre              | Zona                    | Referencia local | Tipo       | Fuente                                                    | Histórico desde |
 | ------ | ------------------- | ----------------------- | ---------------- | ---------- | --------------------------------------------------------- | --------------- |
-| BOB    | Boliviano           | `America/La_Paz`        | `bob.official`   | `official` | Oficial (TCO), Banco Central de Bolivia (bo.dolarapi.com) | 2023-01-01      |
-| BRL    | Real brasileño      | `America/Sao_Paulo`     | `brl.ptax`       | `official` | PTAX de venta, Banco Central do Brasil                    | 2023-01-01      |
-| CLP    | Peso chileno        | `America/Santiago`      | `clp.observed`   | `official` | Dólar observado (mindicador.cl)                           | 2023-01-01      |
-| COP    | Peso colombiano     | `America/Bogota`        | `cop.trm`        | `official` | TRM (datos.gov.co)                                        | 2023-01-01      |
+| BOB    | Boliviano           | `America/La_Paz`        | `bob.official`   | `official` | Oficial (TCO), Banco Central de Bolivia (bo.dolarapi.com) | 2023-01-02      |
+| BRL    | Real brasileño      | `America/Sao_Paulo`     | `brl.ptax`       | `official` | PTAX de venta, Banco Central do Brasil                    | 2023-01-02      |
+| CLP    | Peso chileno        | `America/Santiago`      | `clp.observed`   | `official` | Dólar observado (mindicador.cl)                           | 2023-01-03      |
+| COP    | Peso colombiano     | `America/Bogota`        | `cop.trm`        | `official` | TRM (datos.gov.co)                                        | 2023-01-04      |
 | MXN    | Peso mexicano       | `America/Mexico_City`   | `mxn.fix`        | `official` | FIX (mx.dolarapi.com)                                     | 2026-11-11      |
-| PEN    | Sol peruano         | `America/Lima`          | `pen.sbs`        | `official` | Tipo de cambio SBS de venta (BCRP)                        | 2023-01-01      |
+| PEN    | Sol peruano         | `America/Lima`          | `pen.sbs`        | `official` | Tipo de cambio SBS de venta (BCRP)                        | 2023-01-03      |
 | CRC    | Colón costarricense | `America/Costa_Rica`    | `crc.market`     | `market`   | currency-api                                              | 2024-03-02      |
 | DOP    | Peso dominicano     | `America/Santo_Domingo` | `dop.market`     | `market`   | currency-api                                              | 2024-03-02      |
 | PYG    | Guaraní             | `America/Asuncion`      | `pyg.market`     | `market`   | currency-api                                              | 2024-03-02      |
