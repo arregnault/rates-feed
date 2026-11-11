@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { URLS } from '../config';
-import { caracasDate } from '../dates';
 import { mean, median, parseDecimal, type Decimal } from '../decimal';
 import type { JsonClient } from '../http';
 import type { Source, UsdtReading } from '../model';
@@ -24,12 +23,13 @@ export class BybitP2pUsdt implements Source<UsdtReading> {
 
   constructor(
     private readonly http: JsonClient,
-    private readonly now: () => Date,
+    private readonly currency: string,
+    private readonly today: () => string,
   ) {}
 
   async read(): Promise<UsdtReading> {
     const [ask, bid] = await Promise.all([this.sideMedian('1'), this.sideMedian('0')]);
-    return { value: mean([ask, bid]), ask, bid, effectiveDate: caracasDate(this.now()) };
+    return { value: mean([ask, bid]), ask, bid, effectiveDate: this.today() };
   }
 
   private async sideMedian(side: Side): Promise<Decimal> {
@@ -39,7 +39,7 @@ export class BybitP2pUsdt implements Source<UsdtReading> {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           tokenId: 'USDT',
-          currencyId: 'VES',
+          currencyId: this.currency,
           payment: [],
           side,
           size: ADS_PER_SIDE,

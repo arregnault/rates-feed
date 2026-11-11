@@ -1,11 +1,27 @@
-/** Calendar date at a fixed offset from UTC, for zones without daylight saving time. */
-export function localDate(instant: Date, utcOffsetHours: number): string {
-  return new Date(instant.getTime() + utcOffsetHours * 60 * 60 * 1000).toISOString().slice(0, 10);
-}
+const CARACAS_OFFSET_MS = -4 * 60 * 60 * 1000;
 
 /** Venezuela has used UTC-4 year-round since 2016. */
 export function caracasDate(instant: Date): string {
-  return localDate(instant, -4);
+  return new Date(instant.getTime() + CARACAS_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+/** Calendar date in an IANA time zone, daylight saving time included. */
+export function localDate(instant: Date, timeZone: string): string {
+  let formatter = formatters.get(timeZone);
+  if (formatter === undefined) {
+    formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    formatters.set(timeZone, formatter);
+  }
+  const parts = formatter.formatToParts(instant);
+  const part = (type: string): string => parts.find((item) => item.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
 export function monthOf(date: string): string {

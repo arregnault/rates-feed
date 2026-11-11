@@ -6,7 +6,7 @@ import {
   readArgentinaDatosHistory,
   type ArgentinaHouse,
 } from '../sources/argentina';
-import { HISTORY_FROM, REFERENCE_IDS, UTC_OFFSET_HOURS } from './catalog';
+import { HISTORY_FROM, REFERENCE_IDS, TIME_ZONES } from './catalog';
 import type { CurrencyFeed } from './feed';
 import type { SparseDays } from './history';
 
@@ -25,12 +25,12 @@ const ARGENTINA_EVERY_MINUTES = 60;
 
 export function argentinaFeed(http: JsonClient, now: () => Date): CurrencyFeed {
   return {
-    utcOffsetHours: UTC_OFFSET_HOURS.ARS,
+    timeZone: TIME_ZONES.ARS,
     group: {
       currency: 'ARS',
-      everyMinutes: ARGENTINA_EVERY_MINUTES,
       chains: ARGENTINA_HOUSES.map((house) => ({
         id: ID_BY_HOUSE[house],
+        everyMinutes: ARGENTINA_EVERY_MINUTES,
         sources: [new DolarApiArgentina(http, house), new ArgentinaDatosDay(http, house, now)],
       })),
     },

@@ -1,6 +1,8 @@
+import { caracasDate } from './dates';
 import { runFeed } from './feed';
-import { argentinaFeed } from './v2/argentina';
+import { currencyFeeds } from './v2/currencies';
 import { runFeedV2 } from './v2/feed';
+import { Guards } from './v2/guards';
 import { createJsonClient } from './http';
 import { BcvEur, BcvUsd, createBcvPage, createPageFetcher } from './sources/bcv';
 import { BybitP2pUsdt } from './sources/bybitP2p';
@@ -16,6 +18,9 @@ import { OpenErApiBcvEurCross, OpenErApiBcvUsd, OpenErApiFx } from './sources/op
 import { YadioFx, YadioUsdt } from './sources/yadio';
 import { cacheKey, serve } from './serve';
 import { KvDocumentStore } from './store';
+
+/** Fallback reads per run, within the free plan's 50 subrequests with the primary sources. */
+const MAX_FALLBACK_READS = 5;
 
 interface Env {
   RATES: KVNamespace;
@@ -49,8 +54,8 @@ export default {
         bcvUsd: [new BcvUsd(bcv), new DolarApiBcvUsd(http), new OpenErApiBcvUsd(http)],
         bcvEur: [new BcvEur(bcv), new DolarApiBcvEur(http), new OpenErApiBcvEurCross(http)],
         usdt: [
-          new BybitP2pUsdt(http, () => now),
-          new OkxP2pUsdt(http, () => now),
+          new BybitP2pUsdt(http, 'VES', () => caracasDate(now)),
+          new OkxP2pUsdt(http, 'VES', () => caracasDate(now)),
           new YadioUsdt(http),
           new DolarApiParaleloUsdt(http),
         ],
@@ -60,7 +65,9 @@ export default {
       now,
       warn,
     });
-    const v2 = runFeedV2({ store, currencies: [argentinaFeed(http, () => now)], now, warn });
+    const guards = new Guards(now, MAX_FALLBACK_READS);
+    const currencies = currencyFeeds(http, guards, now);
+    const v2 = runFeedV2({ store, currencies, guards, now, warn });
     context.waitUntil(Promise.all([v1, v2]));
   },
 } satisfies ExportedHandler<Env>;

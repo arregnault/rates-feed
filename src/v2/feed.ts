@@ -2,7 +2,8 @@ import { CACHE } from '../cache';
 import type { Warn } from '../collect';
 import { localDate, monthOf } from '../dates';
 import type { DocumentStore } from '../store';
-import { collectGroup, groupDue, type ReferenceGroup } from './collect';
+import { collectGroup, type ReferenceGroup } from './collect';
+import type { Guards } from './guards';
 import {
   byMonth,
   mergeStoredMonth,
@@ -21,6 +22,8 @@ export const V2_KEYS = {
 export interface StoredLatest {
   schemaVersion: 2;
   currencies: Record<string, LatestV2>;
+  /** Sources resting after a rate-limit answer, until the given instant. */
+  cooldowns?: Record<string, string>;
 }
 
 /** One piece of past history, loaded in a run of its own to stay within the CPU limit. */
@@ -31,13 +34,14 @@ export interface BackfillTask {
 
 export interface CurrencyFeed {
   group: ReferenceGroup;
-  utcOffsetHours: number;
+  timeZone: string;
   backfill: BackfillTask[];
 }
 
 export interface FeedV2Dependencies {
   store: DocumentStore;
   currencies: CurrencyFeed[];
+  guards: Guards;
   now: Date;
   warn: Warn;
 }
@@ -45,16 +49,19 @@ export interface FeedV2Dependencies {
 export async function runFeedV2({
   store,
   currencies,
+  guards,
   now,
   warn,
 }: FeedV2Dependencies): Promise<void> {
   const previous = await store.read<StoredLatest>(V2_KEYS.latest);
+  guards.restore(previous?.cooldowns);
   const latest: StoredLatest = { schemaVersion: 2, currencies: { ...previous?.currencies } };
   for (const { group } of currencies) {
     const before = previous?.currencies[group.currency];
-    if (groupDue(group, before, now)) {
-      latest.currencies[group.currency] = (await collectGroup(group, before, now, warn)).latest;
-    }
+    latest.currencies[group.currency] = (await collectGroup(group, before, now, warn)).latest;
+  }
+  if (Object.keys(guards.cooldowns).length > 0) {
+    latest.cooldowns = guards.cooldowns;
   }
   if (JSON.stringify(latest) !== JSON.stringify(previous)) {
     await store.write(V2_KEYS.latest, latest, CACHE.latest);
@@ -64,7 +71,7 @@ export async function runFeedV2({
   if (historyDue(now, currencies)) {
     for (const feed of currencies) {
       const quotes = latest.currencies[feed.group.currency]?.references ?? [];
-      const currentMonth = monthOf(localDate(now, feed.utcOffsetHours));
+      const currentMonth = monthOf(localDate(now, feed.timeZone));
       const days = sparseFromLatest(quotes.filter((quote) => monthOf(quote.since) >= currentMonth));
       await writeDays(store, feed.group.currency, days, currentMonth, false);
     }
@@ -81,9 +88,7 @@ export function historyDue(now: Date, currencies: readonly CurrencyFeed[]): bool
   const nextRun = new Date(now.getTime() + RUN_EVERY_MINUTES * 60_000);
   return (
     now.getUTCMinutes() < RUN_EVERY_MINUTES ||
-    currencies.some(
-      ({ utcOffsetHours }) => localDate(nextRun, utcOffsetHours) !== localDate(now, utcOffsetHours),
-    )
+    currencies.some(({ timeZone }) => localDate(nextRun, timeZone) !== localDate(now, timeZone))
   );
 }
 
@@ -105,7 +110,7 @@ async function backfillStep(
     return;
   }
   try {
-    const currentMonth = monthOf(localDate(now, pending.feed.utcOffsetHours));
+    const currentMonth = monthOf(localDate(now, pending.feed.timeZone));
     await writeDays(
       store,
       pending.feed.group.currency,

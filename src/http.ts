@@ -1,5 +1,14 @@
 const TIMEOUT_MS = 8000;
 
+export class HttpError extends Error {
+  constructor(
+    url: string,
+    readonly status: number,
+  ) {
+    super(`${url} answered HTTP ${status}`);
+  }
+}
+
 export type JsonClient = (url: string, init?: RequestInit) => Promise<unknown>;
 
 /**
@@ -17,7 +26,7 @@ export function createJsonClient(fetcher: typeof fetch = fetch): JsonClient {
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (!response.ok) {
-        throw new Error(`${url} answered HTTP ${response.status}`);
+        throw new HttpError(url, response.status);
       }
       return response.json();
     };

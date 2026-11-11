@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { URLS } from '../src/config';
+import { okxP2pUrl, URLS } from '../src/config';
 import type { JsonClient } from '../src/http';
 import type { DocumentStore, StoredDocument } from '../src/store';
 
@@ -17,8 +17,8 @@ export const FIXTURES_BY_URL: Record<string, string> = {
   [URLS.dolarApiEuroHistory]: 'dolarapi-historicos-euros',
   [URLS.openErApi]: 'open-er-api',
   [URLS.bybitP2p]: 'bybit-p2p',
-  [URLS.okxP2pSell]: 'okx-p2p-sell',
-  [URLS.okxP2pBuy]: 'okx-p2p-buy',
+  [okxP2pUrl('VES', 'sell')]: 'okx-p2p-sell',
+  [okxP2pUrl('VES', 'buy')]: 'okx-p2p-buy',
   [URLS.yadio]: 'yadio',
   [URLS.currencyApi]: 'currency-api',
 };

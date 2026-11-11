@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SourceChains } from '../src/collect';
+import { caracasDate } from '../src/dates';
 import { historyDue, KEYS, runFeed, type BackfillLoader } from '../src/feed';
 import type { LatestDocument, MonthDocument } from '../src/model';
 import { BybitP2pUsdt } from '../src/sources/bybitP2p';
@@ -17,7 +18,10 @@ function chains(failing: string[] = []): SourceChains {
   return {
     bcvUsd: [new DolarApiBcvUsd(http), new OpenErApiBcvUsd(http)],
     bcvEur: [new DolarApiBcvEur(http)],
-    usdt: [new BybitP2pUsdt(http, () => NOW), new OkxP2pUsdt(http, () => NOW)],
+    usdt: [
+      new BybitP2pUsdt(http, 'VES', () => caracasDate(NOW)),
+      new OkxP2pUsdt(http, 'VES', () => caracasDate(NOW)),
+    ],
     fx: [new CurrencyApiFx(http), new OpenErApiFx(http)],
   };
 }

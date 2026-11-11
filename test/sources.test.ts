@@ -58,14 +58,14 @@ describe('sources', () => {
       return http(url, init);
     };
 
-    const usdt = await new BybitP2pUsdt(recording, () => new Date('2026-10-21T13:00:00Z')).read();
+    const usdt = await new BybitP2pUsdt(recording, 'VES', () => '2026-10-21').read();
 
     expect(sides.sort()).toEqual(['0', '1']);
     expect([decimal(usdt.value), usdt.effectiveDate]).toEqual(['1008.973', '2026-10-21']);
   });
 
   it('takes the median of the top ten OKX P2P ads on each side and averages them', async () => {
-    const usdt = await new OkxP2pUsdt(http, () => new Date('2026-10-21T13:00:00Z')).read();
+    const usdt = await new OkxP2pUsdt(http, 'VES', () => '2026-10-21').read();
 
     expect([decimal(usdt.ask), decimal(usdt.bid), decimal(usdt.value)]).toEqual([
       '1009.915',
@@ -97,7 +97,7 @@ describe('sources', () => {
     const broken: JsonClient = async () => ({ unexpected: true });
 
     await expect(new DolarApiBcvUsd(broken).read()).rejects.toThrow();
-    await expect(new OkxP2pUsdt(broken, () => new Date()).read()).rejects.toThrow();
+    await expect(new OkxP2pUsdt(broken, 'VES', () => '2026-10-21').read()).rejects.toThrow();
   });
 
   it('fails when dolarapi lacks the requested quote', async () => {
